@@ -5,6 +5,7 @@ import { User } from "../models/user.model";
 import { Format } from "../models/formats.model";
 import { Completion } from "../models/completion.model";
 import { AuthRequest } from "../types/auth.types";
+import { createNotification } from "../utils/notification.service";
 
 // Crear validación
 export const validationCompletion = async (req: AuthRequest, res: Response) => {
@@ -16,7 +17,9 @@ export const validationCompletion = async (req: AuthRequest, res: Response) => {
     const { completionId, estado, observaciones } = req.body;
     const validadorId = req.user.id;
 
-    const completion = await Completion.findByPk(completionId);
+    const completion = await Completion.findByPk(completionId, {
+      include: [{ model: User, attributes: ["id", "name"] }, { model: Format, attributes: ["titulo"] }]
+    });
     if (!completion) {
       return res.status(404).json({ error: "Diligenciamiento no encontrado" });
     }
@@ -34,6 +37,19 @@ export const validationCompletion = async (req: AuthRequest, res: Response) => {
     });
     completion.estado = estado;
     await completion.save();
+
+    // Notificar al creador del formato
+    const estadoTexto = estado === 'aprobado' ? 'aprobado' : 'rechazado';
+    await createNotification(
+      completion.usuarioId,
+      `Tu formato "${completion.Format.titulo}" ha sido ${estadoTexto} por el validador ${req.user.name}`
+    );
+
+    // Notificar al validador que completó la validación
+    await createNotification(
+      validadorId,
+      `Has ${estadoTexto} el formato "${completion.Format.titulo}" de ${completion.User.name}`
+    );
 
     res.status(201).json(validacion);
   } catch (error) {

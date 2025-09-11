@@ -4,10 +4,10 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.post("/", authMiddleware, validationCompletion);
-router.get("/", authMiddleware, listValidations);
-router.get("/pending", authMiddleware, getPendingValidations);
-router.get("/completion/:completionId", authMiddleware, getValidationByCompletion);
-router.put("/:id", authMiddleware, updateValidation);
+router.post("/", authMiddleware, validationCompletion as any);
+router.get("/", authMiddleware, listValidations as any);
+router.get("/pending", authMiddleware, getPendingValidations as any);
+router.get("/completion/:completionId", authMiddleware, getValidationByCompletion as any);
+router.put("/:id", authMiddleware, updateValidation as any);
 
 export default router;

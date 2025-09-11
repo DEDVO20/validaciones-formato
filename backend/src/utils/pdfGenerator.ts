@@ -1,4 +1,4 @@
-import * as htmlPdf from 'html-pdf-node';
+import htmlPdf from 'html-pdf-node';
 import { Response } from "express";
 import { Format } from "../models/formats.model";
 import { Completion } from "../models/completion.model";

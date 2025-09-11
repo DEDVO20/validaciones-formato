@@ -7,6 +7,7 @@ import submissionsRoutes from "./submissions.routes";
 import pdfRoutes from "./pdf.routes";
 import { logout } from "../controllers/user.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import notificationRoutes from "./notification.routes";
 
 const router = Router();
 
@@ -30,5 +31,8 @@ router.use("/pdf", pdfRoutes);
 
 // Ruta directa de logout
 router.post("/logout", authMiddleware, logout);
+
+// Rutas de notificaciones
+router.use("/notifications", notificationRoutes);
 
 export default router;

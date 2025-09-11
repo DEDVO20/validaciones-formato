@@ -4,7 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const completionRouter = Router();
 
-completionRouter.post("/", authMiddleware, createCompletion);
-completionRouter.get("/", authMiddleware, listCompletions);
+completionRouter.post("/", authMiddleware, createCompletion as any);
+completionRouter.get("/", authMiddleware, listCompletions as any);
 
 export default completionRouter;

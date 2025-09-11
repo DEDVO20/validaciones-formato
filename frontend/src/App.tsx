@@ -8,9 +8,11 @@ import RoleDemoPage from "./pages/demo/RoleDemoPage";
 import FormatsPage from "./pages/formats/FormatsPage";
 import UseFormatPage from "./pages/formats/UseFormatPage";
 import ValidationsPage from "./pages/validations/ValidationsPage";
+import NotificationsPage from "./pages/notifications/NotificationsPage";
 import { isAuthenticated } from "./services/auth";
 import SubmissionsPage from './pages/Submission/SubmissionsPage';
 import { Toaster } from 'sonner';
+import { NotificationProvider } from './components/NotificationProvider';
 
 // Componente para proteger rutas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -25,7 +27,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Router>
-      <Toaster position="top-right" richColors />
+      <NotificationProvider>
+        <Toaster position="top-right" richColors />
       <Routes>
         <Route path="/login" element={
           <PublicRoute>
@@ -77,8 +80,14 @@ function App() {
             <ValidationsPage />
           </ProtectedRoute>
         } />
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        } />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      </NotificationProvider>
     </Router>
   );
 }

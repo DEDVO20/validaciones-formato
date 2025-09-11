@@ -34,9 +34,8 @@ interface Format {
   titulo: string;
   contenido: string;
   variables: Array<{
-    nombre: string;
-    tipo: string;
-    requerido: boolean;
+    name: string;
+    type: string;
   }>;
   estado: 'activo' | 'inactivo';
 }
@@ -207,7 +206,7 @@ const SubmissionsPage: React.FC = () => {
     if (format) {
       const initialData: Record<string, any> = {};
       format.variables.forEach(variable => {
-        initialData[variable.nombre] = '';
+        initialData[variable.name] = '';
       });
       setFormData(initialData);
     }
@@ -351,66 +350,62 @@ const SubmissionsPage: React.FC = () => {
   };
 
   const renderFormField = (variable: any) => {
-    const { nombre, tipo, requerido } = variable;
+    const { name, type } = variable;
     
-    switch (tipo) {
+    switch (type) {
       case 'text':
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="text"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
       case 'number':
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="number"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
       case 'date':
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="date"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
       default:
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="text"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
@@ -578,8 +573,8 @@ const SubmissionsPage: React.FC = () => {
                 const compatibleFormat = {
                   ...format,
                   variables: format.variables.map(v => ({
-                    name: v.nombre,
-                    type: v.tipo
+                    name: v.name,
+                    type: v.type
                   }))
                 };
                 return (
