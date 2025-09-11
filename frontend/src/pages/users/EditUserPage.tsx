@@ -133,8 +133,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   return (
     <DashboardLayout breadcrumbItems={breadcrumbItems}>
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="w-full">
+        <div className="mb-6">
           <Button
             variant="outline"
             size="sm"
@@ -143,17 +143,19 @@ const handleSubmit = async (e: React.FormEvent) => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Editar Usuario
-          </h1>
         </div>
-
-        <Card>
+        
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
+            <h1 className="text-2xl font-bold tracking-tight text-center mb-6">
+              Editar Usuario
+            </h1>
+            <Card>
           <CardHeader>
             <CardTitle>Editar Mi Perfil</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label htmlFor="nombre">Nombre</Label>
@@ -228,6 +230,8 @@ const handleSubmit = async (e: React.FormEvent) => {
             </form>
           </CardContent>
         </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
