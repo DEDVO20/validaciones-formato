@@ -104,6 +104,44 @@ export const createUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Actualizar usuario
+export const updateUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, email, password, currentPassword } = req.body;
+    
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    // Si se proporciona una nueva contraseña, verificar la actual
+    if (password && currentPassword) {
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Contraseña actual incorrecta" });
+      }
+    }
+    
+    // Preparar datos de actualización
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+    
+    // Actualizar usuario
+    await user.update(updateData);
+    
+    // Retornar usuario actualizado sin contraseña
+    const { password: _, ...userWithoutPassword } = user.toJSON();
+    res.json(userWithoutPassword);
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar usuario", error });
+  }
+};
+
 // Eliminar usuario
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {

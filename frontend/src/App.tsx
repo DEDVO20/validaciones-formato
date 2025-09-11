@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from "./pages/Login";
 import DashboardPage from "./pages/Dashboard";
 import UsersPage from "./pages/users/UsersPage";
+import EditUserPage from "./pages/users/EditUserPage";
 import ReportsPage from "./pages/reports/ReportsPage"
 import RoleDemoPage from "./pages/demo/RoleDemoPage";
 import FormatsPage from "./pages/formats/FormatsPage";
@@ -9,6 +10,7 @@ import UseFormatPage from "./pages/formats/UseFormatPage";
 import ValidationsPage from "./pages/validations/ValidationsPage";
 import { isAuthenticated } from "./services/auth";
 import SubmissionsPage from './pages/Submission/SubmissionsPage';
+import { Toaster } from 'sonner';
 
 // Componente para proteger rutas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -23,6 +25,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" richColors />
       <Routes>
         <Route path="/login" element={
           <PublicRoute>
@@ -37,6 +40,11 @@ function App() {
         <Route path="/users" element={
           <ProtectedRoute>
             <UsersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/users/:id/edit" element={
+          <ProtectedRoute>
+            <EditUserPage />
           </ProtectedRoute>
         } />
         <Route path="/reports" element={
