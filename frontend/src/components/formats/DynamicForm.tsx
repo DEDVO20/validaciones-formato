@@ -19,13 +19,18 @@ interface Format {
 interface DynamicFormProps {
   format: Format;
   onSubmitted: (data: any) => void;
+  onDataChange?: (data: Record<string, any>) => void;
 }
 
-export function DynamicForm({ format, onSubmitted }: DynamicFormProps) {
+export function DynamicForm({ format, onSubmitted, onDataChange }: DynamicFormProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
 
   const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const newData = { ...formData, [name]: value };
+    setFormData(newData);
+    if (onDataChange) {
+      onDataChange(newData);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

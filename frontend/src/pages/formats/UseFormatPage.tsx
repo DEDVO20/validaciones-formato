@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { DynamicForm } from "@/components/formats/DynamicForm";
+import { FormatPreview } from "@/components/formats/FormatPreview";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const UseFormatPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,6 +14,7 @@ const UseFormatPage = () => {
   const [format, setFormat] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (id && token) {
@@ -33,6 +37,10 @@ const UseFormatPage = () => {
         });
     }
   }, [id, token]);
+
+  const handleFormDataChange = (data: Record<string, any>) => {
+    setFormData(data);
+  };
 
   const handleFormSubmit = async (data: { formatoId: number; datos: Record<string, any> }) => {
     if (!token) {
@@ -104,15 +112,44 @@ const UseFormatPage = () => {
 
   return (
     <DashboardLayout breadcrumbItems={breadcrumbItems}>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">{format.titulo}</h1>
-          <p className="text-gray-600 mt-2">Complete el siguiente formulario</p>
+          <p className="text-gray-600 mt-2">Complete el formulario y vea la vista previa en tiempo real</p>
         </div>
-        <DynamicForm
-          format={format}
-          onSubmitted={handleFormSubmit}
-        />
+        
+        <Tabs defaultValue="form" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="form">Formulario</TabsTrigger>
+            <TabsTrigger value="preview">Vista Previa</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="form" className="mt-6">
+            <div className="max-w-2xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Diligenciar Formato</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DynamicForm
+                    format={format}
+                    onSubmitted={handleFormSubmit}
+                    onDataChange={handleFormDataChange}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="preview" className="mt-6">
+            <div className="max-w-4xl mx-auto">
+              <FormatPreview
+                format={format}
+                formData={formData}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

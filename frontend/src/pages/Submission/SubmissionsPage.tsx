@@ -49,6 +49,9 @@ const SubmissionsPage: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [previewPdf, setPreviewPdf] = useState<string>('');
   const { hasRole, token, logout } = useAuth();
 
   const getStatusBadge = (status: string) => {
@@ -114,7 +117,12 @@ const SubmissionsPage: React.FC = () => {
         
         return (
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" title="Ver detalles">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              title="Ver detalles"
+              onClick={() => handleViewDetails(submission)}
+            >
               <Eye className="h-4 w-4" />
             </Button>
             {canEdit && (
@@ -222,6 +230,51 @@ const SubmissionsPage: React.FC = () => {
 
   const handleBackToForm = () => {
     setShowPreview(false);
+  };
+
+  const handleViewDetails = async (submission: Submission) => {
+    try {
+      if (!submission.id) {
+        console.error('No submission ID found');
+        return;
+      }
+
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      // Usar el endpoint apropiado según el estado de la submission
+      const endpoint = submission.estado === 'aprobado' 
+        ? `${import.meta.env.VITE_API_URL}/pdf/preview-validated/${submission.id}`
+        : `${import.meta.env.VITE_API_URL}/pdf/preview-base64/${submission.id}`;
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPreviewPdf(data.pdfBase64);
+        setSelectedSubmission(submission);
+        setShowDetails(true);
+      } else {
+        console.error('Error generating PDF preview:', await response.text());
+        alert("No se pudo generar la vista previa");
+      }
+    } catch (error) {
+      console.error('Error generating PDF preview:', error);
+      alert("No se pudo generar la vista previa");
+    }
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetails(false);
+    setSelectedSubmission(null);
+    setPreviewPdf('');
   };
 
   const resetForm = () => {
@@ -491,7 +544,7 @@ const SubmissionsPage: React.FC = () => {
               {selectedFormat && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Campos del Formato</h3>
-                  {formats.find(f => f.id === parseInt(selectedFormat))?.variables.map(renderFormField)}
+                  {formats.find(f => f.id === parseInt(selectedFormat))?.variables.map((variable) => renderFormField(variable))}
                 </div>
               )}
 
@@ -555,6 +608,114 @@ const SubmissionsPage: React.FC = () => {
                     Crear Diligenciamiento
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de detalle */}
+      <Dialog open={showDetails} onOpenChange={handleCloseDetails}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle del Diligenciamiento</DialogTitle>
+            <DialogDescription>
+              Vista previa del documento generado.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Columna izquierda: Datos enviados y PDF */}
+                <div className="lg:col-span-2 space-y-4">
+                  {/* Información básica */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                    <div>
+                      <p><strong>Formato:</strong></p>
+                      <p className="text-sm text-muted-foreground">{selectedSubmission.Format?.titulo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p><strong>Usuario:</strong></p>
+                      <p className="text-sm text-muted-foreground">{selectedSubmission.usuario?.name || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{selectedSubmission.usuario?.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p><strong>Estado:</strong></p>
+                      <div className="mt-1">{getStatusBadge(selectedSubmission.estado)}</div>
+                    </div>
+                  </div>
+
+                  {/* Vista previa del PDF */}
+                  <div>
+                    <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
+                    {previewPdf ? (
+                      <div className="border rounded-lg overflow-hidden shadow-md">
+                        <iframe
+                          src={`data:application/pdf;base64,${previewPdf}`}
+                          className="w-full min-h-[500px] md:min-h-[700px]"
+                          title="Vista previa del PDF"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[700px] flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                          <FileText className="h-12 w-12 mb-4" />
+                          <p>Generando vista previa del PDF...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Columna derecha: Datos enviados */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Datos enviados:</h4>
+                    <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[700px] overflow-y-auto">
+                      {(() => {
+                        let datos: Record<string, any> | null = null;
+
+                        try {
+                          const raw = selectedSubmission?.datos;
+                          if (typeof raw === "string") {
+                            datos = JSON.parse(raw);
+                          } else if (typeof raw === "object" && raw !== null) {
+                            datos = raw;
+                          }
+                        } catch (err) {
+                          console.error("Error al procesar datos:", err);
+                        }
+
+                        if (!datos || Object.keys(datos).length === 0) {
+                          return <p className="text-muted-foreground">No hay datos disponibles</p>;
+                        }
+
+                        return Object.entries(datos).map(([key, value]) => (
+                          <div key={key} className="border-b border-border/50 pb-1 mb-1 last:border-b-0">
+                            <span className="font-medium">{key}:</span>
+                            <span className="ml-2">{String(value)}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={handleCloseDetails}>
+                  Cerrar
+                </Button>
+                {selectedSubmission.estado === 'aprobado' && (
+                  <Button 
+                    onClick={() => handleDownloadPDF(selectedSubmission.id)}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Descargar PDF
+                  </Button>
+                )}
               </div>
             </div>
           )}
