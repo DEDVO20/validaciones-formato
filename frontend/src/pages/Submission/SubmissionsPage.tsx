@@ -73,18 +73,6 @@ const SubmissionsPage: React.FC = () => {
       },
     },
     {
-      accessorKey: 'datos',
-      header: 'Datos',
-      cell: ({ row }) => {
-        const submission = row.original;
-        return (
-          <div className="max-w-xs truncate">
-            {JSON.stringify(submission.datos)}
-          </div>
-        );
-      },
-    },
-    {
       accessorKey: 'estado',
       header: 'Estado',
       cell: ({ getValue }) => {

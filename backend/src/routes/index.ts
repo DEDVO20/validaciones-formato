@@ -8,6 +8,7 @@ import pdfRoutes from "./pdf.routes";
 import { logout } from "../controllers/user.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import notificationRoutes from "./notification.routes";
+import statsRoutes from "./stats.routes";
 
 const router = Router();
 
@@ -34,5 +35,8 @@ router.post("/logout", authMiddleware, logout);
 
 // Rutas de notificaciones
 router.use("/notifications", notificationRoutes);
+
+// Rutas de estadísticas
+router.use("/stats", statsRoutes);
 
 export default router;

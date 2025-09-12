@@ -41,14 +41,14 @@ export function usePermissions() {
     // Verificar si puede ver reportes
     canViewReports: () => hasRole(['admin', 'validator']),
     
-    // Verificar si puede crear formatos
-    canCreateFormats: () => hasRole(['admin', 'validator']),
+    // Verificar si puede crear formatos (solo admin)
+    canCreateFormats: () => hasRole(['admin']),
     
-    // Verificar si puede editar formatos
+    // Verificar si puede editar formatos (solo admin)
     canEditFormats: () => hasRole(['admin']),
     
-    // Verificar si puede completar formularios
-    canCompleteForm: () => hasRole(['user', 'validator', 'admin']),
+    // Verificar si puede completar formularios (usuarios y admin, NO validadores)
+    canCompleteForm: () => hasRole(['user', 'admin']),
     
     // Obtener el rol actual
     getCurrentRole: () => user?.role || null,

@@ -3,7 +3,6 @@ import LoginPage from "./pages/Login";
 import DashboardPage from "./pages/Dashboard";
 import UsersPage from "./pages/users/UsersPage";
 import EditUserPage from "./pages/users/EditUserPage";
-import ReportsPage from "./pages/reports/ReportsPage"
 import RoleDemoPage from "./pages/demo/RoleDemoPage";
 import FormatsPage from "./pages/formats/FormatsPage";
 import UseFormatPage from "./pages/formats/UseFormatPage";
@@ -50,11 +49,7 @@ function App() {
             <EditUserPage />
           </ProtectedRoute>
         } />
-        <Route path="/reports" element={
-          <ProtectedRoute>
-            <ReportsPage />
-          </ProtectedRoute>
-        } />
+
         <Route path="/demo/roles" element={
           <ProtectedRoute>
             <RoleDemoPage />

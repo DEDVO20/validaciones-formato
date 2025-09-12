@@ -16,6 +16,7 @@ export function useRealtimeNotifications({
   const [lastNotificationId, setLastNotificationId] = useState<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialized = useRef(false);
+  const shownNotifications = useRef<Set<number>>(new Set()); // Tracking de notificaciones ya mostradas
 
   const checkForNewNotifications = async () => {
     if (!isAuthenticated() || !enabled) {
@@ -37,15 +38,18 @@ export function useRealtimeNotifications({
         return;
       }
 
-      // Buscar notificaciones nuevas (no leídas y con ID mayor al último conocido)
+      // Buscar notificaciones nuevas (no leídas y que no hayan sido mostradas antes)
       const newNotifications = notifications.filter(
         notification => 
           !notification.read && 
-          (lastNotificationId === null || notification.id > lastNotificationId)
+          !shownNotifications.current.has(notification.id)
       );
 
       // Mostrar toasts para las nuevas notificaciones
       newNotifications.forEach(notification => {
+        // Marcar como mostrada antes de mostrar el toast
+        shownNotifications.current.add(notification.id);
+        
         toast.info(notification.message, {
           duration: 8000,
           action: {
@@ -61,6 +65,15 @@ export function useRealtimeNotifications({
           },
           className: 'notification-toast'
         });
+      });
+
+      // Limpiar del Set las notificaciones que ya fueron leídas
+      const readNotificationIds = notifications
+        .filter(notification => notification.read)
+        .map(notification => notification.id);
+      
+      readNotificationIds.forEach(id => {
+        shownNotifications.current.delete(id);
       });
 
       // Actualizar el ID de la última notificación
@@ -93,6 +106,10 @@ export function useRealtimeNotifications({
     }
   };
 
+  const clearShownNotifications = () => {
+    shownNotifications.current.clear();
+  };
+
   useEffect(() => {
     if (enabled && isAuthenticated()) {
       startPolling();
@@ -115,6 +132,7 @@ export function useRealtimeNotifications({
   return {
     startPolling,
     stopPolling,
-    checkForNewNotifications
+    checkForNewNotifications,
+    clearShownNotifications
   };
 }

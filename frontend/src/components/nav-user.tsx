@@ -2,8 +2,6 @@ import {
   BadgeCheck,
   Bell,
   ChevronsUpDown,
-  CreditCard,
-  Sparkles,
 } from "lucide-react"
 import { logout } from "@/services/auth"
 import { useNavigate } from "react-router-dom"
@@ -88,22 +86,13 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Actualizar a Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => navigate(`/users/${user?.id}/edit`)}>
                 <BadgeCheck />
                 Cuenta
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Facturación
-              </DropdownMenuItem>
+
               <DropdownMenuItem onClick={() => navigate('/notifications')}>
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
