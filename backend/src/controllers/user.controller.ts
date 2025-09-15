@@ -115,11 +115,32 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
     
-    // Si se proporciona una nueva contraseña, verificar la actual
-    if (password && currentPassword) {
+    // Validaciones para cambio de contraseña
+    if (password || currentPassword) {
+      // Si se intenta cambiar la contraseña, ambos campos son obligatorios
+      if (!currentPassword || !currentPassword.trim()) {
+        return res.status(400).json({ message: "La contraseña actual es obligatoria" });
+      }
+      
+      if (!password || !password.trim()) {
+        return res.status(400).json({ message: "La nueva contraseña es obligatoria" });
+      }
+      
+      // Validar longitud mínima de la nueva contraseña
+      if (password.length < 6) {
+        return res.status(400).json({ message: "La nueva contraseña debe tener al menos 6 caracteres" });
+      }
+      
+      // Verificar que la contraseña actual sea correcta
       const isValidPassword = await bcrypt.compare(currentPassword, user.password);
       if (!isValidPassword) {
         return res.status(400).json({ message: "Contraseña actual incorrecta" });
+      }
+      
+      // Verificar que la nueva contraseña sea diferente a la actual
+      const isSamePassword = await bcrypt.compare(password, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({ message: "La nueva contraseña debe ser diferente a la anterior" });
       }
     }
     

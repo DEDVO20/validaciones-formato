@@ -63,6 +63,36 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
+  // Validaciones para cambio de contraseña
+  if (form.claveNueva || form.claveAnterior || form.repetirClave) {
+    // Si se intenta cambiar la contraseña, todos los campos de contraseña son obligatorios
+    if (!form.claveAnterior.trim()) {
+      toast.error("La contraseña anterior es obligatoria");
+      return;
+    }
+    
+    if (!form.claveNueva.trim()) {
+      toast.error("La nueva contraseña es obligatoria");
+      return;
+    }
+    
+    if (!form.repetirClave.trim()) {
+      toast.error("Debe repetir la nueva contraseña");
+      return;
+    }
+    
+    // Validaciones adicionales de seguridad para la nueva contraseña
+    if (form.claveNueva.length < 6) {
+      toast.error("La nueva contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    
+    if (form.claveNueva === form.claveAnterior) {
+      toast.error("La nueva contraseña debe ser diferente a la anterior");
+      return;
+    }
+  }
+
   if (form.claveNueva !== form.repetirClave) {
     toast.error("Las claves nuevas no coinciden");
     return;

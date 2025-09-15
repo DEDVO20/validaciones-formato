@@ -28,6 +28,7 @@ export function TeamSwitcher({
   const userRole = user?.role || 'Usuario'
   const roleDisplayNames = {
     admin: 'Administrador',
+    creator: 'Creador',
     validator: 'Validador',
     user: 'Usuario'
   }

@@ -63,6 +63,18 @@ export default function RoleDemoPage() {
                   {hasRole(['user']) ? 'Sí' : 'No'}
                 </Badge>
               </div>
+              <div className="flex items-center justify-between">
+                <span>¿Puede crear formatos?</span>
+                <Badge variant={hasRole(['admin']) ? 'default' : 'secondary'}>
+                  {hasRole(['admin']) ? 'Sí' : 'No'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>¿Puede completar formularios?</span>
+                <Badge variant={hasRole(['user', 'admin']) ? 'default' : 'secondary'}>
+                  {hasRole(['user', 'admin']) ? 'Sí' : 'No'}
+                </Badge>
+              </div>
             </CardContent>
           </Card>
           
@@ -83,6 +95,15 @@ if (hasRole(['admin'])) {
 // Verificar múltiples roles
 if (hasRole(['validator', 'admin'])) {
   // Validadores y admins pueden ver esto
+}
+
+// Permisos específicos actualizados
+if (hasRole(['admin'])) {
+  // Solo admins pueden crear formatos
+}
+
+if (hasRole(['user', 'admin'])) {
+  // Usuarios y admins pueden completar formularios
 }`}
               </pre>
             </CardContent>
@@ -180,9 +201,46 @@ if (hasRole(['validator', 'admin'])) {
       
       <Separator />
       
+      {/* Validaciones de Seguridad */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">7. Validaciones de Seguridad</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Validaciones de Contraseña</CardTitle>
+            <CardDescription>Controles implementados para el cambio de contraseñas</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">✓</Badge>
+                <span>Campos obligatorios: No se permiten campos vacíos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">✓</Badge>
+                <span>Longitud mínima: 6 caracteres para nuevas contraseñas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">✓</Badge>
+                <span>Verificación: La contraseña actual debe ser correcta</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">✓</Badge>
+                <span>Confirmación: Nueva contraseña y repetición deben coincidir</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">✓</Badge>
+                <span>Diferenciación: Nueva contraseña debe ser distinta a la actual</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+      
+      <Separator />
+      
       {/* Ejemplos de código */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold">7. Ejemplos de Implementación</h2>
+        <h2 className="text-2xl font-semibold">8. Ejemplos de Implementación</h2>
         <div className="grid gap-4">
           <Card>
             <CardHeader>
