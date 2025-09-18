@@ -2,8 +2,6 @@ import {
   BadgeCheck,
   Bell,
   ChevronsUpDown,
-  CreditCard,
-  Sparkles,
 } from "lucide-react"
 import { logout } from "@/services/auth"
 import { useNavigate } from "react-router-dom"
@@ -29,9 +27,11 @@ import {
 } from "@/components/ui/sidebar"
 
 import { useAuth } from "@/hooks/useAuth"
+import { useNotifications } from "@/hooks/useNotifications"
 
 export function NavUser() {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
@@ -86,25 +86,25 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Actualizar a Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/users/${user?.id}/edit`)}>
                 <BadgeCheck />
                 Cuenta
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Facturación
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notificaciones
+
+              <DropdownMenuItem onClick={() => navigate('/notifications')}>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Bell />
+                    Notificaciones
+                  </div>
+                  {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

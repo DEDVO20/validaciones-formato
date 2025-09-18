@@ -28,7 +28,7 @@ import {
 const data = {
   teams: [
     {
-      name: "Mi Empresa",
+      name: "Herramientas Tecnologicas",
       logo: GalleryVerticalEnd,
       plan: "Enterprise",
     },
@@ -60,11 +60,7 @@ const data = {
       url: "/users",
       icon: User,
     },
-    {
-      title: "Reportes",
-      url: "/reports",
-      icon: PieChart
-    },
+
   ],
 }
 
@@ -77,16 +73,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (item.url === '/users') {
       return hasRole(['admin'])
     }
-    // Solo mostrar formatos a creadores y administradores
+    // Solo mostrar formatos a validadores y administradores (pueden ver pero no crear)
     if (item.url === '/formats') {
-      return hasRole(['admin', 'creator'])
+      return hasRole(['admin', 'validator'])
     }
     // Solo mostrar validaciones a validadores y administradores
     if (item.url === '/validations') {
       return hasRole(['admin', 'validator'])
     }
-    // Mostrar diligenciamientos a todos los usuarios autenticados
-    // Mostrar dashboard y reportes a todos los usuarios autenticados
+    // Solo mostrar diligenciamientos a usuarios y administradores (validadores NO pueden hacer diligenciamientos)
+    if (item.url === '/completions') {
+      return hasRole(['admin', 'user'])
+    }
+    // Mostrar dashboard a todos los usuarios autenticados
     return true
   })
 

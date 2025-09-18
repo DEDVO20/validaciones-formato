@@ -18,7 +18,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Tooltip,
@@ -68,23 +67,16 @@ const FormatsPage: React.FC = () => {
     },
     {
       accessorKey: 'variables',
-      header: 'Variables',
+      header: 'Cantidad de Variables',
       cell: ({ row }: { row: { original: Format } }) => {
         const variables = row.original.variables;
         if (!variables || !Array.isArray(variables) || variables.length === 0) {
-          return <span className="text-gray-500">Sin variables</span>;
+          return <span className="text-gray-500">0</span>;
         }
         return (
-          <div className="flex flex-wrap gap-1">
-            {variables.map((variable, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-              >
-                {variable.name} ({variable.type})
-              </span>
-            ))}
-          </div>
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            {variables.length}
+          </span>
         );
       },
     },
@@ -103,7 +95,8 @@ const FormatsPage: React.FC = () => {
         const format = row.original;
         return (
           <div className="flex space-x-2">
-            {hasRole(['admin', 'creator']) && (
+            {/* Solo administradores pueden editar y eliminar formatos */}
+            {hasRole(['admin']) && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -120,20 +113,6 @@ const FormatsPage: React.FC = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Editar formato</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/formats/${format.id}/use`)}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Usar formato</p>
                   </TooltipContent>
                 </Tooltip>
                 
@@ -153,6 +132,21 @@ const FormatsPage: React.FC = () => {
                 </Tooltip>
               </>
             )}
+            {/* Todos los usuarios autenticados pueden usar formatos */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/formats/${format.id}/use`)}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Usar formato</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         );
       },
@@ -264,7 +258,8 @@ const FormatsPage: React.FC = () => {
                 Administra los formatos disponibles en el sistema
               </CardDescription>
             </div>
-            {hasRole(['admin', 'user']) && (
+            {/* Solo administradores pueden crear formatos */}
+            {hasRole(['admin']) && (
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Crear Formato

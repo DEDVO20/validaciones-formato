@@ -104,6 +104,65 @@ export const createUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Actualizar usuario
+export const updateUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, email, password, currentPassword } = req.body;
+    
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    // Validaciones para cambio de contraseña
+    if (password || currentPassword) {
+      // Si se intenta cambiar la contraseña, ambos campos son obligatorios
+      if (!currentPassword || !currentPassword.trim()) {
+        return res.status(400).json({ message: "La contraseña actual es obligatoria" });
+      }
+      
+      if (!password || !password.trim()) {
+        return res.status(400).json({ message: "La nueva contraseña es obligatoria" });
+      }
+      
+      // Validar longitud mínima de la nueva contraseña
+      if (password.length < 6) {
+        return res.status(400).json({ message: "La nueva contraseña debe tener al menos 6 caracteres" });
+      }
+      
+      // Verificar que la contraseña actual sea correcta
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Contraseña actual incorrecta" });
+      }
+      
+      // Verificar que la nueva contraseña sea diferente a la actual
+      const isSamePassword = await bcrypt.compare(password, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({ message: "La nueva contraseña debe ser diferente a la anterior" });
+      }
+    }
+    
+    // Preparar datos de actualización
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+    
+    // Actualizar usuario
+    await user.update(updateData);
+    
+    // Retornar usuario actualizado sin contraseña
+    const { password: _, ...userWithoutPassword } = user.toJSON();
+    res.json(userWithoutPassword);
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar usuario", error });
+  }
+};
+
 // Eliminar usuario
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {

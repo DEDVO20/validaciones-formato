@@ -2,13 +2,16 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from "./pages/Login";
 import DashboardPage from "./pages/Dashboard";
 import UsersPage from "./pages/users/UsersPage";
-import ReportsPage from "./pages/reports/ReportsPage"
+import EditUserPage from "./pages/users/EditUserPage";
 import RoleDemoPage from "./pages/demo/RoleDemoPage";
 import FormatsPage from "./pages/formats/FormatsPage";
 import UseFormatPage from "./pages/formats/UseFormatPage";
 import ValidationsPage from "./pages/validations/ValidationsPage";
+import NotificationsPage from "./pages/notifications/NotificationsPage";
 import { isAuthenticated } from "./services/auth";
 import SubmissionsPage from './pages/Submission/SubmissionsPage';
+import { Toaster } from 'sonner';
+import { NotificationProvider } from './components/NotificationProvider';
 
 // Componente para proteger rutas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -23,6 +26,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <Router>
+      <NotificationProvider>
+        <Toaster position="top-right" richColors />
       <Routes>
         <Route path="/login" element={
           <PublicRoute>
@@ -39,11 +44,12 @@ function App() {
             <UsersPage />
           </ProtectedRoute>
         } />
-        <Route path="/reports" element={
+        <Route path="/users/:id/edit" element={
           <ProtectedRoute>
-            <ReportsPage />
+            <EditUserPage />
           </ProtectedRoute>
         } />
+
         <Route path="/demo/roles" element={
           <ProtectedRoute>
             <RoleDemoPage />
@@ -69,8 +75,14 @@ function App() {
             <ValidationsPage />
           </ProtectedRoute>
         } />
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        } />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      </NotificationProvider>
     </Router>
   );
 }

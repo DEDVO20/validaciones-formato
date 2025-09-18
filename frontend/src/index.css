@@ -1,6 +1,35 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Estilos personalizados para notificaciones toast */
+.notification-toast {
+  @apply shadow-lg border-l-4 border-l-primary;
+}
+
+.notification-toast [data-title] {
+  @apply font-medium text-foreground;
+}
+
+.notification-toast [data-description] {
+  @apply text-muted-foreground;
+}
+
+/* Animación suave para las notificaciones */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification-toast {
+  animation: slideInRight 0.3s ease-out;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

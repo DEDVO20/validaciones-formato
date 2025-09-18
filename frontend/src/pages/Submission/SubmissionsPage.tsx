@@ -23,7 +23,7 @@ interface Submission  {
   Format?: {
     titulo: string;
   };
-  usuario?: {
+  User?: {
     name: string;
     email: string;
   };
@@ -34,9 +34,8 @@ interface Format {
   titulo: string;
   contenido: string;
   variables: Array<{
-    nombre: string;
-    tipo: string;
-    requerido: boolean;
+    name: string;
+    type: string;
   }>;
   estado: 'activo' | 'inactivo';
 }
@@ -49,6 +48,12 @@ const SubmissionsPage: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [previewPdf, setPreviewPdf] = useState<string>('');
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [editFormData, setEditFormData] = useState<Record<string, any>>({});
   const { hasRole, token, logout } = useAuth();
 
   const getStatusBadge = (status: string) => {
@@ -68,18 +73,6 @@ const SubmissionsPage: React.FC = () => {
       header: 'Formato',
       cell: ({ row }: { row: { original: Submission } }) => {
         return row.original.Format?.titulo || 'N/A';
-      },
-    },
-    {
-      accessorKey: 'datos',
-      header: 'Datos',
-      cell: ({ row }) => {
-        const submission = row.original;
-        return (
-          <div className="max-w-xs truncate">
-            {JSON.stringify(submission.datos)}
-          </div>
-        );
       },
     },
     {
@@ -114,11 +107,21 @@ const SubmissionsPage: React.FC = () => {
         
         return (
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" title="Ver detalles">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              title="Ver detalles"
+              onClick={() => handleViewDetails(submission)}
+            >
               <Eye className="h-4 w-4" />
             </Button>
             {canEdit && (
-              <Button variant="outline" size="sm" title="Editar">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                title="Editar"
+                onClick={() => handleEditSubmission(submission)}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
             )}
@@ -199,7 +202,7 @@ const SubmissionsPage: React.FC = () => {
     if (format) {
       const initialData: Record<string, any> = {};
       format.variables.forEach(variable => {
-        initialData[variable.nombre] = '';
+        initialData[variable.name] = '';
       });
       setFormData(initialData);
     }
@@ -222,6 +225,103 @@ const SubmissionsPage: React.FC = () => {
 
   const handleBackToForm = () => {
     setShowPreview(false);
+  };
+
+  const handleViewDetails = async (submission: Submission) => {
+    try {
+      if (!submission.id) {
+        console.error('No submission ID found');
+        return;
+      }
+
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      // Usar el endpoint apropiado según el estado de la submission
+      const endpoint = submission.estado === 'aprobado' 
+        ? `${import.meta.env.VITE_API_URL}/pdf/preview-validated/${submission.id}`
+        : `${import.meta.env.VITE_API_URL}/pdf/preview-base64/${submission.id}`;
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPreviewPdf(data.pdfBase64);
+        setSelectedSubmission(submission);
+        setShowDetails(true);
+      } else {
+        console.error('Error generating PDF preview:', await response.text());
+        alert("No se pudo generar la vista previa");
+      }
+    } catch (error) {
+      console.error('Error generating PDF preview:', error);
+      alert("No se pudo generar la vista previa");
+    }
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetails(false);
+    setSelectedSubmission(null);
+    setPreviewPdf('');
+  };
+
+  const handleEditSubmission = (submission: Submission) => {
+    setEditingSubmission(submission);
+    setEditFormData(submission.datos as Record<string, any>);
+    setShowEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setShowEditDialog(false);
+    setEditingSubmission(null);
+    setEditFormData({});
+  };
+
+  const handleEditInputChange = (fieldName: string, value: any) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
+  const handleUpdateSubmission = async () => {
+    if (!editingSubmission || !token) {
+      alert('Faltan datos requeridos');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/completions/${editingSubmission.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          datos: editFormData
+        })
+      });
+      
+      if (response.ok) {
+        handleCloseEditDialog();
+        fetchSubmissions();
+        alert('Diligenciamiento actualizado exitosamente');
+      } else {
+        const errorData = await response.json();
+        console.error('Error del servidor:', errorData);
+        alert(`Error: ${errorData.error || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      alert('Error de conexión al servidor');
+    }
   };
 
   const resetForm = () => {
@@ -298,66 +398,62 @@ const SubmissionsPage: React.FC = () => {
   };
 
   const renderFormField = (variable: any) => {
-    const { nombre, tipo, requerido } = variable;
+    const { name, type } = variable;
     
-    switch (tipo) {
+    switch (type) {
       case 'text':
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="text"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
       case 'number':
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="number"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
       case 'date':
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="date"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
       default:
         return (
-          <div key={nombre} className="space-y-2">
+          <div key={name} className="space-y-2">
             <label className="text-sm font-medium">
-              {nombre} {requerido && <span className="text-red-500">*</span>}
+              {name}
             </label>
             <input
               type="text"
               className="w-full p-2 border rounded-md"
-              value={formData[nombre] || ''}
-              onChange={(e) => handleInputChange(nombre, e.target.value)}
-              required={requerido}
+              value={formData[name] || ''}
+              onChange={(e) => handleInputChange(name, e.target.value)}
             />
           </div>
         );
@@ -491,7 +587,7 @@ const SubmissionsPage: React.FC = () => {
               {selectedFormat && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Campos del Formato</h3>
-                  {formats.find(f => f.id === parseInt(selectedFormat))?.variables.map(renderFormField)}
+                  {formats.find(f => f.id === parseInt(selectedFormat))?.variables.map((variable) => renderFormField(variable))}
                 </div>
               )}
 
@@ -525,8 +621,8 @@ const SubmissionsPage: React.FC = () => {
                 const compatibleFormat = {
                   ...format,
                   variables: format.variables.map(v => ({
-                    name: v.nombre,
-                    type: v.tipo
+                    name: v.name,
+                    type: v.type
                   }))
                 };
                 return (
@@ -560,7 +656,222 @@ const SubmissionsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-      </>
+
+      {/* Modal de detalle */}
+      <Dialog open={showDetails} onOpenChange={handleCloseDetails}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalle del Diligenciamiento</DialogTitle>
+            <DialogDescription>
+              Vista previa del documento generado.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Columna izquierda: Datos enviados y PDF */}
+                <div className="lg:col-span-2 space-y-4">
+                  {/* Información básica */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                    <div>
+                      <p><strong>Formato:</strong></p>
+                      <p className="text-sm text-muted-foreground">{selectedSubmission.Format?.titulo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p><strong>Usuario:</strong></p>
+                      <p className="text-sm text-muted-foreground">{selectedSubmission.User?.name || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{selectedSubmission.User?.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p><strong>Estado:</strong></p>
+                      <div className="mt-1">{getStatusBadge(selectedSubmission.estado)}</div>
+                    </div>
+                  </div>
+
+                  {/* Vista previa del PDF */}
+                  <div>
+                    <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
+                    {previewPdf ? (
+                      <div className="border rounded-lg overflow-hidden shadow-md">
+                        <iframe
+                          src={`data:application/pdf;base64,${previewPdf}`}
+                          className="w-full min-h-[500px] md:min-h-[700px]"
+                          title="Vista previa del PDF"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[700px] flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                          <FileText className="h-12 w-12 mb-4" />
+                          <p>Generando vista previa del PDF...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Columna derecha: Datos enviados */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Datos enviados:</h4>
+                    <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[700px] overflow-y-auto">
+                      {(() => {
+                        let datos: Record<string, any> | null = null;
+
+                        try {
+                          const raw = selectedSubmission?.datos;
+                          if (typeof raw === "string") {
+                            datos = JSON.parse(raw);
+                          } else if (typeof raw === "object" && raw !== null) {
+                            datos = raw;
+                          }
+                        } catch (err) {
+                          console.error("Error al procesar datos:", err);
+                        }
+
+                        if (!datos || Object.keys(datos).length === 0) {
+                          return <p className="text-muted-foreground">No hay datos disponibles</p>;
+                        }
+
+                        return Object.entries(datos).map(([key, value]) => (
+                          <div key={key} className="border-b border-border/50 pb-1 mb-1 last:border-b-0">
+                            <span className="font-medium">{key}:</span>
+                            <span className="ml-2">{String(value)}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={handleCloseDetails}>
+                  Cerrar
+                </Button>
+                {selectedSubmission.estado === 'aprobado' && (
+                  <Button 
+                    onClick={() => handleDownloadPDF(selectedSubmission.id)}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Descargar PDF
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para editar diligenciamiento */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Diligenciamiento</DialogTitle>
+            <DialogDescription>
+              Modifica los campos del diligenciamiento.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingSubmission && (
+            <div className="space-y-6">
+              {/* Información del formato */}
+              <div className="bg-muted p-4 rounded-lg">
+                <h3 className="font-semibold mb-2">Formato: {editingSubmission.Format?.titulo}</h3>
+                <p className="text-sm text-muted-foreground">Estado actual: {editingSubmission.estado}</p>
+              </div>
+
+              {/* Campos editables */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Campos del Formato</h3>
+                {(() => {
+                  // Obtener el formato correspondiente para mostrar los campos
+                  const format = formats.find(f => f.id === editingSubmission.formatId);
+                  if (!format) {
+                    return <p className="text-muted-foreground">Cargando campos del formato...</p>;
+                  }
+                  
+                  return format.variables.map((variable) => {
+                    const { name, type } = variable;
+                    
+                    switch (type) {
+                      case 'text':
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="text"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                      case 'number':
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="number"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                      case 'date':
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="date"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                      default:
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="text"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                    }
+                  });
+                })()}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={handleCloseEditDialog}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateSubmission}>
+                  Guardar Cambios
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
     </DashboardLayout>
   );
 };
