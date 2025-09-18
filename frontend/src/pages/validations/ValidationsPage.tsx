@@ -85,7 +85,6 @@ const ValidationsPage: React.FC = () => {
     }
   };
 
-
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pendiente: { variant: 'secondary' as const, label: 'Pendiente', icon: Clock },
@@ -108,16 +107,12 @@ const ValidationsPage: React.FC = () => {
     {
       accessorKey: 'Completion.Format.titulo',
       header: 'Formato',
-      cell: ({ row }: { row: { original: ValidationItem } }) => {
-        return row.original.Completion?.Format?.titulo || 'N/A';
-      },
+      cell: ({ getValue }) => getValue() || 'N/A',
     },
     {
       accessorKey: 'Completion.User.name',
       header: 'Usuario',
-      cell: ({ row }: { row: { original: ValidationItem } }) => {
-        return row.original.Completion?.User?.name || 'N/A';
-      },
+      cell: ({ getValue }) => getValue() || 'N/A',
     },
     {
       accessorKey: 'estado',
@@ -128,29 +123,26 @@ const ValidationsPage: React.FC = () => {
     },
     {
       accessorKey: 'createdAt',
-      header: 'Fecha de Creación',
+      header: 'Fecha',
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
-        return date.toLocaleDateString();
+        return date.toLocaleDateString('es-ES');
       },
     },
     {
-      accessorKey: 'updatedAt',
-      header: 'Fecha de Actualización',
-      cell: ({ getValue }) => {
-        const date = new Date(getValue() as string);
-        return date.toLocaleDateString();
-      },
+      accessorKey: 'Validador.name',
+      header: 'Validador',
+      cell: ({ getValue }) => getValue() || 'Sin asignar',
     },
     {
       id: 'actions',
       header: 'Acciones',
-      cell: ({ row }: { row: { original: ValidationItem } }) => {
+      cell: ({ row }) => {
         const validation = row.original;
         const canValidate = validation.estado === 'pendiente';
         
         return (
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -198,41 +190,43 @@ const ValidationsPage: React.FC = () => {
   ];
 
   const fetchValidations = async () => {
-    if (!token) return;
     try {
       setLoading(true);
       
-      // Obtener diligenciamientos pendientes de validación
-      const pendingResponse = await fetch('http://localhost:3000/api/validations/pending', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const allValidations: ValidationItem[] = [];
+      
+      // Obtener validaciones pendientes
+      const pendingResponse = await fetch(`${import.meta.env.VITE_API_URL}/validations/pending`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
-      // Obtener todas las validaciones (incluyendo completadas)
-      const allValidationsResponse = await fetch('http://localhost:3000/api/validations', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      const allValidations = [];
-      
-      // Procesar diligenciamientos pendientes
       if (pendingResponse.ok) {
         const pendingData = await pendingResponse.json();
-        const pendingValidations = pendingData.map((completion: any) => ({
-          id: `pending_${completion.id}`, // ID único para pendientes
-          completionId: completion.id,
-          validadorId: null,
-          estado: 'pendiente',
-          observaciones: null,
-          createdAt: completion.createdAt,
-          updatedAt: completion.updatedAt,
-          Completion: completion
+        const pendingValidations = pendingData.map((validation: any) => ({
+          id: validation.id,
+          completionId: validation.completionId,
+          validadorId: validation.validadorId,
+          estado: validation.estado,
+          observaciones: validation.observaciones,
+          createdAt: validation.createdAt,
+          updatedAt: validation.updatedAt,
+          Validador: validation.Validador, // Agregar información del validador
+          Completion: validation.Completion
         }));
         allValidations.push(...pendingValidations);
       }
       
-      // Procesar validaciones completadas
-      if (allValidationsResponse.ok) {
-        const completedData = await allValidationsResponse.json();
+      // Obtener validaciones completadas
+      const completedResponse = await fetch(`${import.meta.env.VITE_API_URL}/validations/completed`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (completedResponse.ok) {
+        const completedData = await completedResponse.json();
         const completedValidations = completedData.map((validation: any) => ({
           id: validation.id,
           completionId: validation.completionId,
@@ -256,30 +250,32 @@ const ValidationsPage: React.FC = () => {
     }
   };
 
-  const handleValidation = async (completionId: number, newStatus: 'aprobado' | 'rechazado') => {
+  const handleValidation = async (completionId: number, estado: 'aprobado' | 'rechazado') => {
     try {
-      const response = await fetch(`http://localhost:3000/api/validations`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/validations/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          completionId: completionId,
-          estado: newStatus,
-          observaciones: `Validación ${newStatus}` 
+        body: JSON.stringify({
+          completionId,
+          estado,
+          observaciones: estado === 'rechazado' ? 'Requiere correcciones' : 'Aprobado'
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error validating completion:', errorData);
-        throw new Error('Error validating completion:', errorData)
+      if (response.ok) {
+        await fetchValidations(); // Recargar datos
+        setSelectedValidation(null); // Cerrar modal
+        alert(`Validación ${estado} exitosamente`);
+      } else {
+        console.error('Error validating:', await response.text());
+        alert('Error al procesar la validación');
       }
-
-      fetchValidations();
     } catch (error) {
-      console.error('Error validating completion:', error);
+      console.error('Error validating:', error);
+      alert('Error al procesar la validación');
     }
   };
 
@@ -316,20 +312,20 @@ const ValidationsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (token) fetchValidations();
-  }, [token]);
-
-  const filterValidations = (status: string) => {
-    switch (status) {
+  const filterValidations = (type: string) => {
+    switch (type) {
       case 'pending':
         return validations.filter(v => v.estado === 'pendiente');
       case 'completed':
-        return validations.filter(v => v.estado === 'aprobado' || v.estado === 'rechazado');
+        return validations.filter(v => v.estado !== 'pendiente');
       default:
         return validations;
     }
   };
+
+  useEffect(() => {
+    fetchValidations();
+  }, [token]);
 
   const breadcrumbItems = [
     { title: "Dashboard", href: "/dashboard" },
@@ -385,146 +381,142 @@ const ValidationsPage: React.FC = () => {
           </DialogHeader>
 
           {selectedValidation && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Vista previa del PDF - Ahora en la parte superior */}
+              <div className="space-y-4">
+                <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
+                {previewPdf ? (
+                  <div className="border rounded-lg overflow-hidden shadow-md">
+                    <iframe
+                      src={`data:application/pdf;base64,${previewPdf}`}
+                      className="w-full min-h-[500px] md:min-h-[600px]"
+                      title="Vista previa del PDF"
+                    />
+                  </div>
+                ) : (
+                  <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[600px] flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <FileText className="h-12 w-12 mb-4" />
+                      <p>Haz clic en el botón de vista previa en la tabla para generar el PDF</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Información debajo del PDF - Grid de 2 columnas en pantallas grandes */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Columna izquierda: Vista previa del PDF */}
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
-                    {previewPdf ? (
-                      <div className="border rounded-lg overflow-hidden shadow-md">
-                        <iframe
-                          src={`data:application/pdf;base64,${previewPdf}`}
-                          className="w-full min-h-[500px] md:min-h-[700px]"
-                          title="Vista previa del PDF"
-                        />
-                      </div>
-                    ) : (
-                      <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[700px] flex items-center justify-center">
-                        <div className="flex flex-col items-center">
-                          <FileText className="h-12 w-12 mb-4" />
-                          <p>Haz clic en el botón de vista previa en la tabla para generar el PDF</p>
-                        </div>
+                {/* Información básica */}
+                <div className="p-4 bg-muted rounded-lg space-y-4">
+                  <h4 className="font-semibold">Información del Documento</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">Formato:</p>
+                      <p className="text-sm text-muted-foreground">{selectedValidation.Completion?.Format?.titulo || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Estado:</p>
+                      <div className="mt-1">{getStatusBadge(selectedValidation.estado)}</div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Fecha de creación:</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedValidation.createdAt).toLocaleString('es-ES')}
+                      </p>
+                    </div>
+                    {selectedValidation.estado !== 'pendiente' && (
+                      <div>
+                        <p className="text-sm font-medium">Fecha de validación:</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(selectedValidation.updatedAt).toLocaleString('es-ES')}
+                        </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Columna derecha: Información de usuarios y datos */}
-                <div className="space-y-4">
-                  {/* Información básica */}
-                  <div className="p-4 bg-muted rounded-lg space-y-4">
-                    <h4 className="font-semibold">Información del Documento</h4>
-                    <div className="space-y-3">
+                {/* Información del usuario solicitante */}
+                <div className="p-4 bg-blue-50 rounded-lg space-y-3">
+                  <h4 className="font-semibold text-blue-900">Usuario Solicitante</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Nombre:</p>
+                      <p className="text-sm text-blue-700">{selectedValidation.Completion?.User?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Email:</p>
+                      <p className="text-sm text-blue-700">{selectedValidation.Completion?.User?.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">ID de diligenciamiento:</p>
+                      <p className="text-sm text-blue-700">{selectedValidation.Completion?.id || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información del validador (si existe) */}
+                {selectedValidation.estado !== 'pendiente' && selectedValidation.Validador && (
+                  <div className="p-4 bg-green-50 rounded-lg space-y-3">
+                    <h4 className="font-semibold text-green-900">Información de Validación</h4>
+                    <div className="space-y-2">
                       <div>
-                        <p className="text-sm font-medium">Formato:</p>
-                        <p className="text-sm text-muted-foreground">{selectedValidation.Completion?.Format?.titulo || 'N/A'}</p>
+                        <p className="text-sm font-medium text-green-800">Validador:</p>
+                        <p className="text-sm text-green-700">{selectedValidation.Validador.name}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium">Estado:</p>
-                        <div className="mt-1">{getStatusBadge(selectedValidation.estado)}</div>
+                        <p className="text-sm font-medium text-green-800">Email del validador:</p>
+                        <p className="text-sm text-green-700">{selectedValidation.Validador.email}</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Fecha de creación:</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(selectedValidation.createdAt).toLocaleString('es-ES')}
-                        </p>
-                      </div>
-                      {selectedValidation.estado !== 'pendiente' && (
+                      {selectedValidation.observaciones && (
                         <div>
-                          <p className="text-sm font-medium">Fecha de validación:</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(selectedValidation.updatedAt).toLocaleString('es-ES')}
-                          </p>
+                          <p className="text-sm font-medium text-green-800">Observaciones:</p>
+                          <p className="text-sm text-green-700">{selectedValidation.observaciones}</p>
                         </div>
                       )}
                     </div>
                   </div>
+                )}
 
-                  {/* Información del usuario solicitante */}
-                  <div className="p-4 bg-blue-50 rounded-lg space-y-3">
-                    <h4 className="font-semibold text-blue-900">Usuario Solicitante</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">Nombre:</p>
-                        <p className="text-sm text-blue-700">{selectedValidation.Completion?.User?.name || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">Email:</p>
-                        <p className="text-sm text-blue-700">{selectedValidation.Completion?.User?.email || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">ID de diligenciamiento:</p>
-                        <p className="text-sm text-blue-700">{selectedValidation.Completion?.id || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
+                {/* Datos enviados */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Datos Enviados</h4>
+                  <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[300px] overflow-y-auto">
+                    {(() => {
+                      let datos: Record<string, any> | null = null;
 
-                  {/* Información del validador (si existe) */}
-                  {selectedValidation.estado !== 'pendiente' && selectedValidation.Validador && (
-                    <div className="p-4 bg-green-50 rounded-lg space-y-3">
-                      <h4 className="font-semibold text-green-900">Información de Validación</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-sm font-medium text-green-800">Validador:</p>
-                          <p className="text-sm text-green-700">{selectedValidation.Validador.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-green-800">Email del validador:</p>
-                          <p className="text-sm text-green-700">{selectedValidation.Validador.email}</p>
-                        </div>
-                        {selectedValidation.observaciones && (
-                          <div>
-                            <p className="text-sm font-medium text-green-800">Observaciones:</p>
-                            <p className="text-sm text-green-700">{selectedValidation.observaciones}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Datos enviados */}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">Datos Enviados</h4>
-                    <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[300px] overflow-y-auto">
-                      {(() => {
-                        let datos: Record<string, any> | null = null;
-
-                        try {
-                          const raw = selectedValidation?.Completion?.datos;
-                          if (typeof raw === "string") {
-                            datos = JSON.parse(raw);
-                          } else if (typeof raw === "object" && raw !== null) {
-                            datos = raw;
-                          }
-                        } catch (err) {
-                          console.error("Error al procesar datos:", err);
+                      try {
+                        const raw = selectedValidation?.Completion?.datos;
+                        if (typeof raw === "string") {
+                          datos = JSON.parse(raw);
+                        } else if (typeof raw === "object" && raw !== null) {
+                          datos = raw;
                         }
+                      } catch (err) {
+                        console.error("Error al procesar datos:", err);
+                      }
 
-                        if (datos && Object.keys(datos).length > 0) {
-                          return Object.entries(datos).map(([key, value]) => (
-                            <div key={key} className="border-b border-muted-foreground/20 pb-2 last:border-b-0">
-                              <div className="text-sm">
-                                <span className="font-medium text-foreground capitalize">
-                                  {key}:
-                                </span>
-                                <span className="ml-2 text-muted-foreground">
-                                  {typeof value === "object" && value !== null
-                                    ? JSON.stringify(value)
-                                    : String(value ?? "")}
-                                </span>
-                              </div>
+                      if (datos && Object.keys(datos).length > 0) {
+                        return Object.entries(datos).map(([key, value]) => (
+                          <div key={key} className="border-b border-muted-foreground/20 pb-2 last:border-b-0">
+                            <div className="text-sm">
+                              <span className="font-medium text-foreground capitalize">
+                                {key}:
+                              </span>
+                              <span className="ml-2 text-muted-foreground">
+                                {typeof value === "object" && value !== null
+                                  ? JSON.stringify(value)
+                                  : String(value ?? "")}
+                              </span>
                             </div>
-                          ));
-                        }
-
-                        return (
-                          <div className="text-xs text-muted-foreground">
-                            No hay datos disponibles
                           </div>
-                        );
-                      })()}
-                    </div>
+                        ));
+                      }
+
+                      return (
+                        <div className="text-xs text-muted-foreground">
+                          No hay datos disponibles
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
