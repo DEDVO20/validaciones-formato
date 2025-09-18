@@ -37,7 +37,7 @@ export const generarPDF = async (res: Response, data: PdfData) => {
   // 📌 Reemplazar variables
   const contenido = replaceVariables(formato.contenido, datos);
 
-  // 📌 Crear HTML para el PDF
+  // 📌 Crear HTML para el PDF (solo información del formato)
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -65,12 +65,6 @@ export const generarPDF = async (res: Response, data: PdfData) => {
           text-align: justify;
           margin-bottom: 30px;
         }
-        .footer {
-          font-size: 10px;
-          margin-top: 40px;
-          border-top: 1px solid #ccc;
-          padding-top: 10px;
-        }
         p {
           margin-bottom: 12px;
         }
@@ -82,10 +76,6 @@ export const generarPDF = async (res: Response, data: PdfData) => {
     <body>
       <div class="title">${formato.titulo}</div>
       <div class="content">${contenido}</div>
-      <div class="footer">
-        <p>Generado por: Usuario ${diligenciamiento.usuarioId}</p>
-        <p>Fecha: ${new Date(diligenciamiento.createdAt).toLocaleString()}</p>
-      </div>
     </body>
     </html>
   `;
@@ -129,7 +119,7 @@ export const generarPDFPreview = async (data: PdfData): Promise<string> => {
   // 📌 Reemplazar variables
   const contenido = replaceVariables(formato.contenido, datos);
 
-  // 📌 Crear HTML para el PDF
+  // 📌 Crear HTML para el PDF (solo información del formato)
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -157,12 +147,6 @@ export const generarPDFPreview = async (data: PdfData): Promise<string> => {
           text-align: justify;
           margin-bottom: 30px;
         }
-        .footer {
-          font-size: 10px;
-          margin-top: 40px;
-          border-top: 1px solid #ccc;
-          padding-top: 10px;
-        }
         p {
           margin-bottom: 12px;
         }
@@ -174,10 +158,6 @@ export const generarPDFPreview = async (data: PdfData): Promise<string> => {
     <body>
       <div class="title">${formato.titulo}</div>
       <div class="content">${contenido}</div>
-      <div class="footer">
-        <p>Generado por: Usuario ${diligenciamiento.usuarioId}</p>
-        <p>Fecha: ${new Date(diligenciamiento.createdAt).toLocaleString()}</p>
-      </div>
     </body>
     </html>
   `;
@@ -214,7 +194,7 @@ export const generarPDFValidado = async (res: Response, data: ValidatedPdfData) 
   // 📌 Reemplazar variables en el contenido
   const contenido = replaceVariables(formato.contenido, datos);
 
-  // 📌 Crear HTML para el PDF validado
+  // 📌 Crear HTML para el PDF validado (solo información del formato)
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -232,65 +212,15 @@ export const generarPDFValidado = async (res: Response, data: ValidatedPdfData) 
           text-align: center;
           margin-bottom: 30px;
         }
-        .validated-title {
-          font-size: 20px;
-          font-weight: bold;
-          color: #2563eb;
-          margin-bottom: 10px;
-        }
-        .separator {
-          border-bottom: 1px solid #e5e7eb;
-          margin: 20px 0;
-        }
         .format-title {
           font-size: 18px;
           font-weight: bold;
           text-align: center;
           margin: 20px 0;
         }
-        .validation-box {
-          background-color: #f8fafc;
-          border: 1px solid #e2e8f0;
-          padding: 20px;
-          margin: 20px 0;
-          border-radius: 5px;
-        }
-        .approved {
-          color: #059669;
-          font-weight: bold;
-          font-size: 14px;
-          margin-bottom: 10px;
-        }
-        .validation-info {
-          color: #374151;
-          font-size: 11px;
-          line-height: 1.4;
-        }
         .content {
           text-align: justify;
           margin: 30px 0;
-        }
-        .observations {
-          margin-top: 40px;
-        }
-        .observations-title {
-          font-size: 14px;
-          font-weight: bold;
-          color: #1f2937;
-          text-decoration: underline;
-          margin-bottom: 10px;
-        }
-        .observations-text {
-          font-size: 11px;
-          color: #374151;
-          text-align: justify;
-        }
-        .footer {
-          margin-top: 40px;
-          padding-top: 20px;
-          border-top: 1px solid #e5e7eb;
-          font-size: 9px;
-          color: #6b7280;
         }
         p {
           margin-bottom: 12px;
@@ -302,35 +232,12 @@ export const generarPDFValidado = async (res: Response, data: ValidatedPdfData) 
     </head>
     <body>
       <div class="header">
-        <div class="validated-title">DOCUMENTO VALIDADO</div>
-        <div class="separator"></div>
       </div>
       
       <div class="format-title">${formato.titulo}</div>
       
-      <div class="validation-box">
-        <div class="approved">✓ DOCUMENTO APROBADO</div>
-        <div class="validation-info">
-          <div>Validado por: ${validador.name}</div>
-          <div>Fecha de validación: ${new Date(validacion.updatedAt).toLocaleString('es-ES')}</div>
-          <div>Usuario solicitante: ${usuario.name}</div>
-        </div>
-      </div>
-      
       <div class="content">${contenido}</div>
       
-      ${validacion.observaciones ? `
-        <div class="observations">
-          <div class="observations-title">Observaciones del Validador:</div>
-          <div class="observations-text">${validacion.observaciones}</div>
-        </div>
-      ` : ''}
-      
-      <div class="footer">
-        <div>Documento generado el: ${new Date().toLocaleString('es-ES')}</div>
-        <div>ID de diligenciamiento: ${diligenciamiento.id}</div>
-        <div>Estado: ${diligenciamiento.estado.toUpperCase()}</div>
-      </div>
     </body>
     </html>
   `;
@@ -364,17 +271,30 @@ export const generarPDFValidado = async (res: Response, data: ValidatedPdfData) 
 
 // Función para generar PDF validado en base64 para previsualización
 export const generarPDFValidadoPreview = async (data: ValidatedPdfData): Promise<string> => {
-  const { formato, diligenciamiento, validacion, usuario, validador } = data;
+  try {
+    const { formato, diligenciamiento, validacion, usuario, validador } = data;
 
-  // 📌 Parsear datos del diligenciamiento
-  const datos = typeof diligenciamiento.datos === "string"
-    ? JSON.parse(diligenciamiento.datos)
-    : diligenciamiento.datos || {};
+    // Validar que todos los datos necesarios estén presentes
+    if (!formato || !diligenciamiento || !validacion || !usuario || !validador) {
+      console.error('Datos faltantes para generar PDF validado:', {
+        formato: !!formato,
+        diligenciamiento: !!diligenciamiento,
+        validacion: !!validacion,
+        usuario: !!usuario,
+        validador: !!validador
+      });
+      throw new Error('Datos incompletos para generar PDF validado');
+    }
 
-  // 📌 Reemplazar variables en el contenido
-  const contenido = replaceVariables(formato.contenido, datos);
+    // 📌 Parsear datos del diligenciamiento
+    const datos = typeof diligenciamiento.datos === "string"
+      ? JSON.parse(diligenciamiento.datos)
+      : diligenciamiento.datos || {};
 
-  // 📌 Crear HTML para el PDF validado
+    // 📌 Reemplazar variables en el contenido
+    const contenido = replaceVariables(formato.contenido, datos);
+
+  // 📌 Crear HTML para el PDF validado (solo información del formato)
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -392,65 +312,15 @@ export const generarPDFValidadoPreview = async (data: ValidatedPdfData): Promise
           text-align: center;
           margin-bottom: 30px;
         }
-        .validated-title {
-          font-size: 20px;
-          font-weight: bold;
-          color: #2563eb;
-          margin-bottom: 10px;
-        }
-        .separator {
-          border-bottom: 1px solid #e5e7eb;
-          margin: 20px 0;
-        }
         .format-title {
           font-size: 18px;
           font-weight: bold;
           text-align: center;
           margin: 20px 0;
         }
-        .validation-box {
-          background-color: #f8fafc;
-          border: 1px solid #e2e8f0;
-          padding: 20px;
-          margin: 20px 0;
-          border-radius: 5px;
-        }
-        .approved {
-          color: #059669;
-          font-weight: bold;
-          font-size: 14px;
-          margin-bottom: 10px;
-        }
-        .validation-info {
-          color: #374151;
-          font-size: 11px;
-          line-height: 1.4;
-        }
         .content {
           text-align: justify;
           margin: 30px 0;
-        }
-        .observations {
-          margin-top: 40px;
-        }
-        .observations-title {
-          font-size: 14px;
-          font-weight: bold;
-          color: #1f2937;
-          text-decoration: underline;
-          margin-bottom: 10px;
-        }
-        .observations-text {
-          font-size: 11px;
-          color: #374151;
-          text-align: justify;
-        }
-        .footer {
-          margin-top: 40px;
-          padding-top: 20px;
-          border-top: 1px solid #e5e7eb;
-          font-size: 9px;
-          color: #6b7280;
         }
         p {
           margin-bottom: 12px;
@@ -462,35 +332,12 @@ export const generarPDFValidadoPreview = async (data: ValidatedPdfData): Promise
     </head>
     <body>
       <div class="header">
-        <div class="validated-title">DOCUMENTO VALIDADO</div>
-        <div class="separator"></div>
       </div>
       
       <div class="format-title">${formato.titulo}</div>
       
-      <div class="validation-box">
-        <div class="approved">✓ DOCUMENTO APROBADO</div>
-        <div class="validation-info">
-          <div>Validado por: ${validador.name}</div>
-          <div>Fecha de validación: ${new Date(validacion.updatedAt).toLocaleString('es-ES')}</div>
-          <div>Usuario solicitante: ${usuario.name}</div>
-        </div>
-      </div>
-      
       <div class="content">${contenido}</div>
       
-      ${validacion.observaciones ? `
-        <div class="observations">
-          <div class="observations-title">Observaciones del Validador:</div>
-          <div class="observations-text">${validacion.observaciones}</div>
-        </div>
-      ` : ''}
-      
-      <div class="footer">
-        <div>Documento generado el: ${new Date().toLocaleString('es-ES')}</div>
-        <div>ID de diligenciamiento: ${diligenciamiento.id}</div>
-        <div>Estado: ${diligenciamiento.estado.toUpperCase()}</div>
-      </div>
     </body>
     </html>
   `;
@@ -513,4 +360,8 @@ export const generarPDFValidadoPreview = async (data: ValidatedPdfData): Promise
     console.error('Error generating validated PDF preview:', error);
     throw new Error('Error al generar vista previa del PDF validado');
   }
+} catch (error) {
+  console.error('Error en generarPDFValidadoPreview:', error);
+  throw error;
+}
 };

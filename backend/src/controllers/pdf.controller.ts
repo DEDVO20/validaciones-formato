@@ -30,6 +30,7 @@ export const descargarPDF = async (req: AuthRequest, res: Response) => {
           include: [
             {
               model: User,
+              as: 'Validador',
               foreignKey: 'validadorId',
               attributes: ['id', 'name', 'email']
             }
@@ -114,6 +115,7 @@ export const previsualizarPDFValidado = async (req: AuthRequest, res: Response) 
           include: [
             {
               model: User,
+              as: 'Validador',
               foreignKey: 'validadorId',
               attributes: ['id', 'name', 'email']
             }
@@ -145,7 +147,7 @@ export const previsualizarPDFValidado = async (req: AuthRequest, res: Response) 
     
     // Si hay validación, generar PDF validado
     if (validacion && diligenciamiento.estado === "aprobado") {
-      const validador = (validacion as any).User || await User.findByPk(validacion.validadorId);
+      const validador = (validacion as any).Validador || await User.findByPk(validacion.validadorId);
       const usuario = (diligenciamiento as any).User || await User.findByPk(diligenciamiento.usuarioId);
       
       if (!validador || !usuario) {

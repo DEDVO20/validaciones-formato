@@ -87,6 +87,11 @@ export const listValidations = async (req: AuthRequest, res: Response) => {
             { model: User, attributes: ["id", "name", "email"] },
             { model: Format, attributes: ["id", "titulo"] }
           ]
+        },
+        {
+          model: User,
+          as: 'Validador',
+          attributes: ["id", "name", "email"]
         }
       ],
       order: [['updatedAt', 'DESC']]
