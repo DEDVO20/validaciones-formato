@@ -134,6 +134,46 @@ export const getPendingValidations = async (req: AuthRequest, res: Response) => 
   }
 };
 
+// Listar todas las validaciones completadas (aprobadas y rechazadas)
+export const getCompletedValidations = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Usuario no autenticado" });
+    }
+
+    // Verificar que el usuario sea validador o admin
+    if (req.user.role !== 'validator' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: "No tienes permisos para ver validaciones" });
+    }
+
+    const validaciones = await Validacion.findAll({
+      where: {
+        estado: ['aprobado', 'rechazado'] // Solo validaciones completadas
+      },
+      include: [
+        { 
+          model: Completion, 
+          attributes: ["id", "datos", "estado"],
+          include: [
+            { model: User, attributes: ["id", "name", "email"] },
+            { model: Format, attributes: ["id", "titulo"] }
+          ]
+        },
+        {
+          model: User,
+          as: 'Validador',
+          attributes: ["id", "name", "email"]
+        }
+      ],
+      order: [['updatedAt', 'DESC']]
+    });
+
+    res.json(validaciones);
+  } catch (error) {
+    res.status(500).json({ error: "Error al consultar validaciones completadas" });
+  }
+};
+
 // Obtener validación por completion ID
 export const getValidationByCompletion = async (req: AuthRequest, res: Response) => {
   try {

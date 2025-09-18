@@ -195,7 +195,7 @@ const ValidationsPage: React.FC = () => {
       
       const allValidations: ValidationItem[] = [];
       
-      // Obtener validaciones pendientes
+      // Obtener validaciones pendientes (completions sin validación)
       const pendingResponse = await fetch(`${import.meta.env.VITE_API_URL}/validations/pending`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -204,21 +204,28 @@ const ValidationsPage: React.FC = () => {
       
       if (pendingResponse.ok) {
         const pendingData = await pendingResponse.json();
-        const pendingValidations = pendingData.map((validation: any) => ({
-          id: validation.id,
-          completionId: validation.completionId,
-          validadorId: validation.validadorId,
-          estado: validation.estado,
-          observaciones: validation.observaciones,
-          createdAt: validation.createdAt,
-          updatedAt: validation.updatedAt,
-          Validador: validation.Validador, // Agregar información del validador
-          Completion: validation.Completion
+        // Convertir completions pendientes a formato de validación
+        const pendingValidations = pendingData.map((completion: any) => ({
+          id: 0, // No hay validación aún
+          completionId: completion.id,
+          validadorId: 0, // Sin validador asignado
+          estado: 'pendiente',
+          observaciones: '',
+          createdAt: completion.createdAt,
+          updatedAt: completion.updatedAt,
+          Validador: null, // Sin validador asignado
+          Completion: {
+            id: completion.id,
+            datos: completion.datos,
+            estado: completion.estado,
+            User: completion.User,
+            Format: completion.Format
+          }
         }));
         allValidations.push(...pendingValidations);
       }
       
-      // Obtener validaciones completadas
+      // Obtener validaciones completadas (aprobadas y rechazadas)
       const completedResponse = await fetch(`${import.meta.env.VITE_API_URL}/validations/completed`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -227,20 +234,8 @@ const ValidationsPage: React.FC = () => {
       
       if (completedResponse.ok) {
         const completedData = await completedResponse.json();
-        const completedValidations = completedData.map((validation: any) => ({
-          id: validation.id,
-          completionId: validation.completionId,
-          validadorId: validation.validadorId,
-          estado: validation.estado,
-          observaciones: validation.observaciones,
-          createdAt: validation.createdAt,
-          updatedAt: validation.updatedAt,
-          Validador: validation.Validador, // Agregar información del validador
-          Completion: validation.Completion
-        }));
-        allValidations.push(...completedValidations);
+        allValidations.push(...completedData);
       }
-      
       
       setValidations(allValidations);
     } catch (error) {
@@ -252,7 +247,7 @@ const ValidationsPage: React.FC = () => {
 
   const handleValidation = async (completionId: number, estado: 'aprobado' | 'rechazado') => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/validations/validate`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/validations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
