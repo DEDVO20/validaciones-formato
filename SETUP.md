@@ -53,10 +53,22 @@ PORT=3000
 CREATE DATABASE proyecto_mvp;
 ```
 
-2. Ejecutar migraciones:
+2. Configurar variables de entorno (asegúrate de haber completado el paso anterior)
+
+3. Ejecutar migración:
 ```bash
 npx sequelize-cli db:migrate
 ```
+
+Esto ejecutará la migración consolidada `20250115000000-create-all-tables.js` que creará todas las tablas necesarias:
+- `users` - Usuarios del sistema con roles (user, validator, admin)
+- `formats` - Formatos disponibles con variables JSON
+- `completions` - Diligenciamientos realizados por usuarios
+- `validaciones` - Validaciones de diligenciamientos por validadores
+- `notifications` - Sistema de notificaciones
+- `FormatSubmissions` - Envíos de formatos (tabla adicional)
+
+**Nota:** Ahora solo hay **una migración** en lugar de múltiples archivos separados.
 
 3. (Opcional) Ejecutar seeders para datos de prueba:
 ```bash
