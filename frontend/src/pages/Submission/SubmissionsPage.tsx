@@ -23,7 +23,7 @@ interface Submission  {
   Format?: {
     titulo: string;
   };
-  usuario?: {
+  User?: {
     name: string;
     email: string;
   };
@@ -51,6 +51,9 @@ const SubmissionsPage: React.FC = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [previewPdf, setPreviewPdf] = useState<string>('');
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [editFormData, setEditFormData] = useState<Record<string, any>>({});
   const { hasRole, token, logout } = useAuth();
 
   const getStatusBadge = (status: string) => {
@@ -113,7 +116,12 @@ const SubmissionsPage: React.FC = () => {
               <Eye className="h-4 w-4" />
             </Button>
             {canEdit && (
-              <Button variant="outline" size="sm" title="Editar">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                title="Editar"
+                onClick={() => handleEditSubmission(submission)}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
             )}
@@ -262,6 +270,58 @@ const SubmissionsPage: React.FC = () => {
     setShowDetails(false);
     setSelectedSubmission(null);
     setPreviewPdf('');
+  };
+
+  const handleEditSubmission = (submission: Submission) => {
+    setEditingSubmission(submission);
+    setEditFormData(submission.datos as Record<string, any>);
+    setShowEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setShowEditDialog(false);
+    setEditingSubmission(null);
+    setEditFormData({});
+  };
+
+  const handleEditInputChange = (fieldName: string, value: any) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
+  const handleUpdateSubmission = async () => {
+    if (!editingSubmission || !token) {
+      alert('Faltan datos requeridos');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/completions/${editingSubmission.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          datos: editFormData
+        })
+      });
+      
+      if (response.ok) {
+        handleCloseEditDialog();
+        fetchSubmissions();
+        alert('Diligenciamiento actualizado exitosamente');
+      } else {
+        const errorData = await response.json();
+        console.error('Error del servidor:', errorData);
+        alert(`Error: ${errorData.error || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      alert('Error de conexión al servidor');
+    }
   };
 
   const resetForm = () => {
@@ -620,8 +680,8 @@ const SubmissionsPage: React.FC = () => {
                     </div>
                     <div>
                       <p><strong>Usuario:</strong></p>
-                      <p className="text-sm text-muted-foreground">{selectedSubmission.usuario?.name || 'N/A'}</p>
-                      <p className="text-xs text-muted-foreground">{selectedSubmission.usuario?.email || 'N/A'}</p>
+                      <p className="text-sm text-muted-foreground">{selectedSubmission.User?.name || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{selectedSubmission.User?.email || 'N/A'}</p>
                     </div>
                     <div>
                       <p><strong>Estado:</strong></p>
@@ -704,7 +764,114 @@ const SubmissionsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-      </>
+
+      {/* Modal para editar diligenciamiento */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Diligenciamiento</DialogTitle>
+            <DialogDescription>
+              Modifica los campos del diligenciamiento.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingSubmission && (
+            <div className="space-y-6">
+              {/* Información del formato */}
+              <div className="bg-muted p-4 rounded-lg">
+                <h3 className="font-semibold mb-2">Formato: {editingSubmission.Format?.titulo}</h3>
+                <p className="text-sm text-muted-foreground">Estado actual: {editingSubmission.estado}</p>
+              </div>
+
+              {/* Campos editables */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Campos del Formato</h3>
+                {(() => {
+                  // Obtener el formato correspondiente para mostrar los campos
+                  const format = formats.find(f => f.id === editingSubmission.formatId);
+                  if (!format) {
+                    return <p className="text-muted-foreground">Cargando campos del formato...</p>;
+                  }
+                  
+                  return format.variables.map((variable) => {
+                    const { name, type } = variable;
+                    
+                    switch (type) {
+                      case 'text':
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="text"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                      case 'number':
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="number"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                      case 'date':
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="date"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                      default:
+                        return (
+                          <div key={name} className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {name}
+                            </label>
+                            <input
+                              type="text"
+                              className="w-full p-2 border rounded-md"
+                              value={editFormData[name] || ''}
+                              onChange={(e) => handleEditInputChange(name, e.target.value)}
+                            />
+                          </div>
+                        );
+                    }
+                  });
+                })()}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={handleCloseEditDialog}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateSubmission}>
+                  Guardar Cambios
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
     </DashboardLayout>
   );
 };
