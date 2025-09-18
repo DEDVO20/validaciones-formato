@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { Validacion } from "../models/validacion.model";
-import { FormatSubmission } from "../models/formatSubmission.model";
 import { User } from "../models/user.model";
 import { Format } from "../models/formats.model";
 import { Completion } from "../models/completion.model";

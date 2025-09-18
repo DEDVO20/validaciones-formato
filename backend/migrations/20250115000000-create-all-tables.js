@@ -205,57 +205,10 @@ module.exports = {
       },
     });
 
-    // Crear tabla FormatSubmissions
-    await queryInterface.createTable("FormatSubmissions", {
-      id: {
-        type: Sequelize.INTEGER.UNSIGNED,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      formatoId: {
-        type: Sequelize.INTEGER.UNSIGNED,
-        allowNull: false,
-        references: {
-          model: "formats",
-          key: "id",
-        },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
-      },
-      usuarioId: {
-        type: Sequelize.INTEGER.UNSIGNED,
-        allowNull: false,
-        references: {
-          model: "users",
-          key: "id",
-        },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
-      },
-      data: {
-        type: Sequelize.JSON,
-        allowNull: false,
-      },
-      estado: {
-        type: Sequelize.ENUM("pendiente", "aprobado", "rechazado"),
-        defaultValue: "pendiente",
-      },
-      createdAt: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.fn("NOW"),
-      },
-      updatedAt: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.fn("NOW"),
-      },
-    });
   },
 
   async down(queryInterface, Sequelize) {
     // Eliminar tablas en orden inverso para respetar las foreign keys
-    await queryInterface.dropTable("FormatSubmissions");
     await queryInterface.dropTable("notifications");
     await queryInterface.dropTable("validaciones");
     await queryInterface.dropTable("completions");
