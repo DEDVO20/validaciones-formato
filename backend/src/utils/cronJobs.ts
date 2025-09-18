@@ -18,7 +18,7 @@ export class CronJobService {
 
   /**
    * Inicia el cron job de limpieza de notificaciones
-   * Se ejecuta todos los días a las 2:00 AM
+   * Se ejecuta cada 6 horas
    */
   static startNotificationCleanup(): void {
     const jobName = 'notification-cleanup';
@@ -28,8 +28,8 @@ export class CronJobService {
       this.stopJob(jobName);
     }
 
-    // Crear nuevo job que se ejecuta todos los días a las 2:00 AM
-    const task = cron.schedule('0 2 * * *', async () => {
+    // Crear nuevo job que se ejecuta cada 6 horas
+    const task = cron.schedule('0 */6 * * *', async () => {
       console.log('🧹 Ejecutando limpieza programada de notificaciones...');
       await NotificationCleanupService.runCleanupWithLogging();
     }, {
@@ -43,7 +43,7 @@ export class CronJobService {
     // Iniciar el job
     task.start();
     
-    console.log('✅ Cron job de limpieza de notificaciones iniciado (todos los días a las 2:00 AM)');
+    console.log('✅ Cron job de limpieza de notificaciones iniciado (cada 6 horas)');
   }
 
   /**

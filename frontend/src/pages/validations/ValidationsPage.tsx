@@ -18,6 +18,11 @@ interface ValidationItem {
   observaciones?: string;
   createdAt: string;
   updatedAt: string;
+  Validador?: {
+    id: number;
+    name: string;
+    email: string;
+  };
   Completion?: {
     id: number;
     datos: Record<string, any>;
@@ -212,7 +217,6 @@ const ValidationsPage: React.FC = () => {
       // Procesar diligenciamientos pendientes
       if (pendingResponse.ok) {
         const pendingData = await pendingResponse.json();
-        console.log('Pending data:', pendingData);
         const pendingValidations = pendingData.map((completion: any) => ({
           id: `pending_${completion.id}`, // ID único para pendientes
           completionId: completion.id,
@@ -229,7 +233,6 @@ const ValidationsPage: React.FC = () => {
       // Procesar validaciones completadas
       if (allValidationsResponse.ok) {
         const completedData = await allValidationsResponse.json();
-        console.log('Completed data:', completedData);
         const completedValidations = completedData.map((validation: any) => ({
           id: validation.id,
           completionId: validation.completionId,
@@ -238,12 +241,12 @@ const ValidationsPage: React.FC = () => {
           observaciones: validation.observaciones,
           createdAt: validation.createdAt,
           updatedAt: validation.updatedAt,
+          Validador: validation.Validador, // Agregar información del validador
           Completion: validation.Completion
         }));
         allValidations.push(...completedValidations);
       }
       
-      console.log('All validations:', allValidations);
       
       setValidations(allValidations);
     } catch (error) {
@@ -384,94 +387,146 @@ const ValidationsPage: React.FC = () => {
           {selectedValidation && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Columna izquierda: Datos enviados y PDF */}
-                <div className="lg:col-span-2 space-y-4">
-                  {/* Información básica */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-                    <div>
-                      <p><strong>Formato:</strong></p>
-                      <p className="text-sm text-muted-foreground">{selectedValidation.Completion?.Format?.titulo || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p><strong>Usuario:</strong></p>
-                      <p className="text-sm text-muted-foreground">{selectedValidation.Completion?.User?.name || 'N/A'}</p>
-                      <p className="text-xs text-muted-foreground">{selectedValidation.Completion?.User?.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p><strong>Estado:</strong></p>
-                      <div className="mt-1">{getStatusBadge(selectedValidation.estado)}</div>
-                    </div>
-                  </div>
-
-                  {/* Vista previa del PDF */}
+                {/* Columna izquierda: Vista previa del PDF */}
+                <div className="space-y-4">
                   <div>
-                   <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
-              {previewPdf ? (
-                <div className="border rounded-lg overflow-hidden shadow-md">
-                  <iframe
-                    src={`data:application/pdf;base64,${previewPdf}`}
-                    className="w-full min-h-[500px] md:min-h-[700px]"
-                    title="Vista previa del PDF"
-                  />
-                </div>
-              ) : (
-                <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[700px] flex items-center justify-center">
-                  <div className="flex flex-col items-center">
-                    <FileText className="h-12 w-12 mb-4" />
-                    <p>Haz clic en el botón de vista previa en la tabla para generar el PDF</p>
+                    <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
+                    {previewPdf ? (
+                      <div className="border rounded-lg overflow-hidden shadow-md">
+                        <iframe
+                          src={`data:application/pdf;base64,${previewPdf}`}
+                          className="w-full min-h-[500px] md:min-h-[700px]"
+                          title="Vista previa del PDF"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[700px] flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                          <FileText className="h-12 w-12 mb-4" />
+                          <p>Haz clic en el botón de vista previa en la tabla para generar el PDF</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Columna derecha: Información de usuarios y datos */}
+                <div className="space-y-4">
+                  {/* Información básica */}
+                  <div className="p-4 bg-muted rounded-lg space-y-4">
+                    <h4 className="font-semibold">Información del Documento</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium">Formato:</p>
+                        <p className="text-sm text-muted-foreground">{selectedValidation.Completion?.Format?.titulo || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Estado:</p>
+                        <div className="mt-1">{getStatusBadge(selectedValidation.estado)}</div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Fecha de creación:</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(selectedValidation.createdAt).toLocaleString('es-ES')}
+                        </p>
+                      </div>
+                      {selectedValidation.estado !== 'pendiente' && (
+                        <div>
+                          <p className="text-sm font-medium">Fecha de validación:</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(selectedValidation.updatedAt).toLocaleString('es-ES')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Información del usuario solicitante */}
+                  <div className="p-4 bg-blue-50 rounded-lg space-y-3">
+                    <h4 className="font-semibold text-blue-900">Usuario Solicitante</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Nombre:</p>
+                        <p className="text-sm text-blue-700">{selectedValidation.Completion?.User?.name || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Email:</p>
+                        <p className="text-sm text-blue-700">{selectedValidation.Completion?.User?.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">ID de diligenciamiento:</p>
+                        <p className="text-sm text-blue-700">{selectedValidation.Completion?.id || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Información del validador (si existe) */}
+                  {selectedValidation.estado !== 'pendiente' && selectedValidation.Validador && (
+                    <div className="p-4 bg-green-50 rounded-lg space-y-3">
+                      <h4 className="font-semibold text-green-900">Información de Validación</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm font-medium text-green-800">Validador:</p>
+                          <p className="text-sm text-green-700">{selectedValidation.Validador.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-green-800">Email del validador:</p>
+                          <p className="text-sm text-green-700">{selectedValidation.Validador.email}</p>
+                        </div>
+                        {selectedValidation.observaciones && (
+                          <div>
+                            <p className="text-sm font-medium text-green-800">Observaciones:</p>
+                            <p className="text-sm text-green-700">{selectedValidation.observaciones}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Datos enviados */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold">Datos Enviados</h4>
+                    <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[300px] overflow-y-auto">
+                      {(() => {
+                        let datos: Record<string, any> | null = null;
+
+                        try {
+                          const raw = selectedValidation?.Completion?.datos;
+                          if (typeof raw === "string") {
+                            datos = JSON.parse(raw);
+                          } else if (typeof raw === "object" && raw !== null) {
+                            datos = raw;
+                          }
+                        } catch (err) {
+                          console.error("Error al procesar datos:", err);
+                        }
+
+                        if (datos && Object.keys(datos).length > 0) {
+                          return Object.entries(datos).map(([key, value]) => (
+                            <div key={key} className="border-b border-muted-foreground/20 pb-2 last:border-b-0">
+                              <div className="text-sm">
+                                <span className="font-medium text-foreground capitalize">
+                                  {key}:
+                                </span>
+                                <span className="ml-2 text-muted-foreground">
+                                  {typeof value === "object" && value !== null
+                                    ? JSON.stringify(value)
+                                    : String(value ?? "")}
+                                </span>
+                              </div>
+                            </div>
+                          ));
+                        }
+
+                        return (
+                          <div className="text-xs text-muted-foreground">
+                            No hay datos disponibles
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
-
-                {/* Columna derecha: Datos enviados */}
-                 <div className="space-y-4">
-                   <div>
-                     <h4 className="font-semibold mb-2">Datos enviados:</h4>
-                     <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[700px] overflow-y-auto">
-  {(() => {
-    let datos: Record<string, any> | null = null;
-
-    try {
-      const raw = selectedValidation?.Completion?.datos;
-      if (typeof raw === "string") {
-        datos = JSON.parse(raw); // por si acaso viene como texto
-      } else if (typeof raw === "object" && raw !== null) {
-        datos = raw; // ya es objeto
-      }
-    } catch (err) {
-      console.error("Error al procesar datos:", err);
-    }
-
-    if (datos && Object.keys(datos).length > 0) {
-      return Object.entries(datos).map(([key, value]) => (
-        <div key={key} className="border-b border-muted-foreground/20 pb-2 last:border-b-0">
-          <div className="text-sm">
-            {/* 🔹 Primera letra mayúscula */}
-            <span className="font-medium text-foreground capitalize">
-              {key}:
-            </span>
-            <span className="ml-2 text-muted-foreground">
-              {typeof value === "object" && value !== null
-                ? JSON.stringify(value)
-                : String(value ?? "")}
-            </span>
-          </div>
-        </div>
-      ));
-    }
-
-    return (
-      <div className="text-xs text-muted-foreground">
-        No hay datos disponibles
-      </div>
-    );
-  })()}
-</div>
-
-                   </div>
-                 </div>
               </div>
             </div>
           )}

@@ -3,20 +3,19 @@ import { Op } from 'sequelize';
 
 export class NotificationCleanupService {
   /**
-   * Elimina notificaciones leídas que tengan más de 2 días
+   * Elimina notificaciones que tengan más de 7 días (independientemente de si están leídas o no)
    */
   static async cleanupOldReadNotifications(): Promise<number> {
     try {
-      // Calcular fecha límite (2 días atrás)
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      // Calcular fecha límite (7 días atrás)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // Eliminar notificaciones leídas más antiguas que 2 días
+      // Eliminar notificaciones más antiguas que 7 días
       const deletedCount = await Notification.destroy({
         where: {
-          read: true,
           updatedAt: {
-            [Op.lt]: twoDaysAgo
+            [Op.lt]: sevenDaysAgo
           }
         }
       });
@@ -39,8 +38,8 @@ export class NotificationCleanupService {
     oldRead: number;
   }> {
     try {
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
       const [total, read, unread, oldRead] = await Promise.all([
         Notification.count(),
@@ -48,9 +47,8 @@ export class NotificationCleanupService {
         Notification.count({ where: { read: false } }),
         Notification.count({
           where: {
-            read: true,
             updatedAt: {
-              [Op.lt]: twoDaysAgo
+              [Op.lt]: sevenDaysAgo
             }
           }
         })
@@ -76,7 +74,7 @@ export class NotificationCleanupService {
         total: statsBefore.total,
         leídas: statsBefore.read,
         noLeídas: statsBefore.unread,
-        leídasAntiguas: statsBefore.oldRead
+        antiguas: statsBefore.oldRead
       });
 
       // Ejecutar limpieza

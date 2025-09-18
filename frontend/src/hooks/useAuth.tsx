@@ -60,7 +60,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Inicializar token desde localStorage al cargar
     useEffect(() => {
         const savedToken = localStorage.getItem("authToken");
-        console.log('Saved token from localStorage:', savedToken); // Debug log
         if (savedToken) {
             setToken(savedToken);
             fetchUser(savedToken);

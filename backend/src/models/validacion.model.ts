@@ -50,4 +50,4 @@ Completion.hasOne(Validacion, { foreignKey: "completionId" });
 Validacion.belongsTo(Completion, { foreignKey: "completionId" });
 
 User.hasMany(Validacion, { foreignKey: "validadorId" });
-Validacion.belongsTo(User, { foreignKey: "validadorId" });
+Validacion.belongsTo(User, { foreignKey: "validadorId", as: "Validador" });
