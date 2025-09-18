@@ -3,7 +3,6 @@ import userRoutes from "./user.routes";
 import formatRoutes from "./formato.routes";
 import completionRoutes from "./completion.routes";
 import validationRoutes from "./validacion.routes";
-import submissionsRoutes from "./submissions.routes";
 import pdfRoutes from "./pdf.routes";
 import { logout } from "../controllers/user.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -20,9 +19,6 @@ router.use("/formats", formatRoutes);
 
 // Rutas de diligenciamientos
 router.use("/completions", completionRoutes);
-
-// Rutas de submissions
-router.use("/submissions", submissionsRoutes);
 
 // Rutas de validaciones
 router.use("/validations", validationRoutes);

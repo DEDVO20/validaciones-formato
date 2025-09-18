@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { Validacion } from "../models/validacion.model";
 import { User } from "../models/user.model";
-import { FormatSubmission } from "../models/formatSubmission.model";
 import { Format } from "../models/formats.model";
 import { Completion } from "../models/completion.model";
 import { AuthRequest } from "../types/auth.types";
