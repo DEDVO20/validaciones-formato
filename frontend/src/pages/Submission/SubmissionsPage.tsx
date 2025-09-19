@@ -138,7 +138,6 @@ const SubmissionsPage: React.FC = () => {
       });
       
       if (response.status === 401) {
-        // Token inválido o expirado, limpiar sesión y redirigir
         logout();
         return;
       }
@@ -225,7 +224,6 @@ const SubmissionsPage: React.FC = () => {
         return;
       }
 
-      // Usar el endpoint apropiado según el estado de la submission
       const endpoint = submission.estado === 'aprobado' 
         ? `${import.meta.env.VITE_API_URL}/pdf/preview-validated/${submission.id}`
         : `${import.meta.env.VITE_API_URL}/pdf/preview-base64/${submission.id}`;
@@ -314,7 +312,6 @@ const SubmissionsPage: React.FC = () => {
         return;
       }
 
-      // Crear blob y descargar archivo
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -396,11 +393,16 @@ const SubmissionsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-lg">Cargando diligenciamientos...</div>
+      <DashboardLayout breadcrumbItems={[
+        { title: "Dashboard", href: "/dashboard" },
+        { title: "Diligenciamientos", isActive: true },
+      ]}>
+        <div className="container mx-auto py-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-lg">Cargando diligenciamientos...</div>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -409,14 +411,12 @@ const SubmissionsPage: React.FC = () => {
     { title: "Diligenciamientos", isActive: true },
   ];
 
-  // Filtrar submissions por estado
   const pendingSubmissions = submissions.filter(s => s.estado === 'pendiente');
   const completedSubmissions = submissions.filter(s => s.estado === 'aprobado' || s.estado === 'rechazado');
 
   return (
     <DashboardLayout breadcrumbItems={breadcrumbItems}>
-      <>
-        <Card>
+      <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
@@ -483,7 +483,6 @@ const SubmissionsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Modal para crear nuevo diligenciamiento */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -500,7 +499,6 @@ const SubmissionsPage: React.FC = () => {
           
           {!showPreview ? (
             <div className="space-y-6">
-              {/* Selector de formato */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Formato *</label>
                 <Select value={selectedFormat} onValueChange={handleFormatSelect}>
@@ -517,7 +515,6 @@ const SubmissionsPage: React.FC = () => {
                 </Select>
               </div>
 
-              {/* Campos del formulario */}
               {selectedFormat && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Campos del Formato</h3>
@@ -525,7 +522,6 @@ const SubmissionsPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Botones de acción */}
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={resetForm}>
                   Cancelar
@@ -548,10 +544,8 @@ const SubmissionsPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Vista previa */}
               {selectedFormat && (() => {
                 const format = formats.find(f => f.id === parseInt(selectedFormat))!;
-                // Convertir el formato para que sea compatible con FormatPreview
                 const compatibleFormat = {
                   ...format,
                   variables: format.variables.map(v => ({
@@ -571,7 +565,6 @@ const SubmissionsPage: React.FC = () => {
                 );
               })()}
               
-              {/* Botones de navegación */}
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={handleBackToForm}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -591,7 +584,6 @@ const SubmissionsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de detalle */}
       <Dialog open={showDetails} onOpenChange={handleCloseDetails}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
           <DialogHeader>
@@ -602,103 +594,129 @@ const SubmissionsPage: React.FC = () => {
           </DialogHeader>
 
           {selectedSubmission && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
+                {previewPdf ? (
+                  <div className="border rounded-lg overflow-hidden shadow-md">
+                    <iframe
+                      src={`data:application/pdf;base64,${previewPdf}`}
+                      className="w-full min-h-[500px] md:min-h-[600px]"
+                      title="Vista previa del PDF"
+                    />
+                  </div>
+                ) : (
+                  <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[600px] flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <FileText className="h-12 w-12 mb-4" />
+                      <p>Generando vista previa del PDF...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Columna izquierda: Datos enviados y PDF */}
-                <div className="lg:col-span-2 space-y-4">
-                  {/* Información básica */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-muted rounded-lg space-y-4">
+                  <h4 className="font-semibold">Información del Documento</h4>
+                  <div className="space-y-3">
                     <div>
-                      <p><strong>Formato:</strong></p>
+                      <p className="text-sm font-medium">Formato:</p>
                       <p className="text-sm text-muted-foreground">{selectedSubmission.Format?.titulo || 'N/A'}</p>
                     </div>
                     <div>
-                      <p><strong>Usuario:</strong></p>
-                      <p className="text-sm text-muted-foreground">{selectedSubmission.User?.name || 'N/A'}</p>
-                      <p className="text-xs text-muted-foreground">{selectedSubmission.User?.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p><strong>Estado:</strong></p>
+                      <p className="text-sm font-medium">Estado:</p>
                       <div className="mt-1">{getStatusBadge(selectedSubmission.estado)}</div>
                     </div>
-                  </div>
-
-                  {/* Vista previa del PDF */}
-                  <div>
-                    <h4 className="font-semibold mb-2">Vista Previa del PDF</h4>
-                    {previewPdf ? (
-                      <div className="border rounded-lg overflow-hidden shadow-md">
-                        <iframe
-                          src={`data:application/pdf;base64,${previewPdf}`}
-                          className="w-full min-h-[500px] md:min-h-[700px]"
-                          title="Vista previa del PDF"
-                        />
-                      </div>
-                    ) : (
-                      <div className="border rounded-lg p-8 text-center text-muted-foreground min-h-[500px] md:min-h-[700px] flex items-center justify-center">
-                        <div className="flex flex-col items-center">
-                          <FileText className="h-12 w-12 mb-4" />
-                          <p>Generando vista previa del PDF...</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Columna derecha: Datos enviados */}
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Datos enviados:</h4>
-                    <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[700px] overflow-y-auto">
-                      {(() => {
-                        let datos: Record<string, any> | null = null;
-
-                        try {
-                          const raw = selectedSubmission?.datos;
-                          if (typeof raw === "string") {
-                            datos = JSON.parse(raw);
-                          } else if (typeof raw === "object" && raw !== null) {
-                            datos = raw;
-                          }
-                        } catch (err) {
-                          console.error("Error al procesar datos:", err);
-                        }
-
-                        if (!datos || Object.keys(datos).length === 0) {
-                          return <p className="text-muted-foreground">No hay datos disponibles</p>;
-                        }
-
-                        return Object.entries(datos).map(([key, value]) => (
-                          <div key={key} className="border-b border-border/50 pb-1 mb-1 last:border-b-0">
-                            <span className="font-medium">{key}:</span>
-                            <span className="ml-2">{String(value)}</span>
-                          </div>
-                        ));
-                      })()}
+                    <div>
+                      <p className="text-sm font-medium">Fecha de creación:</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedSubmission.createdAt).toLocaleString('es-ES')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Última actualización:</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedSubmission.updatedAt).toLocaleString('es-ES')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">ID de diligenciamiento:</p>
+                      <p className="text-sm text-muted-foreground">{selectedSubmission.id}</p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Botones de acción */}
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button variant="outline" onClick={handleCloseDetails}>
-                  Cerrar
-                </Button>
-                {selectedSubmission.estado === 'aprobado' && (
-                  <Button 
-                    onClick={() => handleDownloadPDF(selectedSubmission.id)}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Descargar PDF
-                  </Button>
-                )}
+                <div className="p-4 bg-blue-50 rounded-lg space-y-3">
+                  <h4 className="font-semibold text-blue-900">Usuario Solicitante</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Nombre:</p>
+                      <p className="text-sm text-blue-700">{selectedSubmission.User?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Email:</p>
+                      <p className="text-sm text-blue-700">{selectedSubmission.User?.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">ID de usuario:</p>
+                      <p className="text-sm text-blue-700">{selectedSubmission.usuarioId}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2 space-y-3">
+                  <h4 className="font-semibold">Datos Enviados</h4>
+                  <div className="bg-muted p-3 rounded-md text-sm space-y-2 max-h-[300px] overflow-y-auto">
+                    {(() => {
+                      let datos: Record<string, any> | null = null;
+
+                      try {
+                        const raw = selectedSubmission?.datos;
+                        if (typeof raw === "string") {
+                          datos = JSON.parse(raw);
+                        } else if (typeof raw === "object" && raw !== null) {
+                          datos = raw;
+                        }
+                      } catch (err) {
+                        console.error("Error al procesar datos:", err);
+                      }
+
+                      if (!datos || Object.keys(datos).length === 0) {
+                        return (
+                          <div className="text-xs text-muted-foreground">
+                            No hay datos disponibles
+                          </div>
+                        );
+                      }
+
+                      return Object.entries(datos).map(([key, value]) => (
+                        <div key={key} className="border-b border-border/50 pb-1 mb-1 last:border-b-0">
+                          <span className="font-medium">{key}:</span>
+                          <span className="ml-2">{String(value)}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           )}
+
+          <div className="flex justify-end space-x-2 pt-4 border-t">
+            <Button variant="outline" onClick={handleCloseDetails}>
+              Cerrar
+            </Button>
+            {selectedSubmission?.estado === 'aprobado' && (
+              <Button 
+                onClick={() => handleDownloadPDF(selectedSubmission.id)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Descargar PDF
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
-    </>
     </DashboardLayout>
   );
 };
