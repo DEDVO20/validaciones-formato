@@ -36,7 +36,11 @@ export function CreateUserDialog({ onUserCreated }: { onUserCreated: (user: User
     setError("")
     
     try {
+<<<<<<< HEAD
+      const res = await fetch("http://localhost:3000/api/users", {
+=======
       const res = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
+>>>>>>> main
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -36,7 +36,11 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!token) return
+<<<<<<< HEAD
+    fetch("http://localhost:3000/api/users", {
+=======
     fetch(`${import.meta.env.VITE_API_URL}/users`, {
+>>>>>>> main
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -46,7 +50,11 @@ export default function UsersPage() {
 
   const handleDelete = async (id: number) => {
     try {
+<<<<<<< HEAD
+      await fetch(`http://localhost:3000/api/users/${id}`, {
+=======
       await fetch(`${import.meta.env.VITE_API_URL}/users/${id}`, {
+>>>>>>> main
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })

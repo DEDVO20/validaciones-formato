@@ -59,7 +59,11 @@ export function EditUserDialog({ user, onUserUpdated }: EditUserDialogProps) {
 
   const handleSubmit = async () => {
     try {
+<<<<<<< HEAD
+      const res = await fetch(`http://localhost:3000/api/users/${user.id}`, {
+=======
       const res = await fetch(`${import.meta.env.VITE_API_URL}/users/${user.id}`, {
+>>>>>>> main
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
