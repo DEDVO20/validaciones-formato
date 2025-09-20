@@ -20,6 +20,9 @@ router.use("/formats", formatRoutes);
 // Rutas de diligenciamientos
 router.use("/completions", completionRoutes);
 
+// Rutas de submissions
+// router.use("/submissions", submissionsRoutes);
+
 // Rutas de validaciones
 router.use("/validations", validationRoutes);
 

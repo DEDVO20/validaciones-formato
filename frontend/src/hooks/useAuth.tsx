@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!authToken) return;
 
         try {
-            const res = await fetch ("http://localhost:3000/api/users/me", {
+            const res = await fetch (`${import.meta.env.VITE_API_URL}/users/me`, {
                 headers: {
                     Authorization: `Bearer ${authToken}`,
                 },

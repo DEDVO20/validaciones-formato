@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Validacion } from "../models/validacion.model";
 import { User } from "../models/user.model";
+import { FormatSubmission } from "../models/formatSubmission.model";
 import { Format } from "../models/formats.model";
 import { Completion } from "../models/completion.model";
 import { AuthRequest } from "../types/auth.types";
@@ -134,7 +135,7 @@ export const getPendingValidations = async (req: AuthRequest, res: Response) => 
   }
 };
 
-// Listar todas las validaciones completadas (aprobadas y rechazadas)
+// Listar todas las validaciones completadas (aprobadas o rechazadas)
 export const getCompletedValidations = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -147,12 +148,9 @@ export const getCompletedValidations = async (req: AuthRequest, res: Response) =
     }
 
     const validaciones = await Validacion.findAll({
-      where: {
-        estado: ['aprobado', 'rechazado'] // Solo validaciones completadas
-      },
       include: [
-        { 
-          model: Completion, 
+        {
+          model: Completion,
           attributes: ["id", "datos", "estado"],
           include: [
             { model: User, attributes: ["id", "name", "email"] },
@@ -165,6 +163,9 @@ export const getCompletedValidations = async (req: AuthRequest, res: Response) =
           attributes: ["id", "name", "email"]
         }
       ],
+      where: {
+        estado: ['aprobado', 'rechazado']
+      },
       order: [['updatedAt', 'DESC']]
     });
 

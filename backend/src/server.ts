@@ -14,7 +14,7 @@ const startServer = async () => {
     CronJobService.startAllJobs();
     
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`🚀 Servidor corriendo`);
     });
   } catch (error) {
     console.error("❌ Error al iniciar servidor:", error);
